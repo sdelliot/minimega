@@ -107,6 +107,37 @@ else
     echo "minimega user already exists."
 fi
 
+MINIMEGA_BIN="/usr/bin/minimega"
+LIBPCAP_SO_0_8="/usr/lib/x86_64-linux-gnu/libpcap.so.0.8"
+LIBPCAP_VERSION="1.10.1"  # Specify the expected version of libpcap
+
+MINIMEGA_BIN="/usr/bin/minimega"
+
+if [ -f "$MINIMEGA_BIN" ]; then
+    echo "Checking if $MINIMEGA_BIN links to libpcap..."
+
+    # Check the linked libraries
+    LINKED_LIBS=$(ldd "$MINIMEGA_BIN" | grep "libpcap.so.0.8")
+
+    if echo "$LINKED_LIBS" | grep -q "not found"; then
+        echo "Error: $MINIMEGA_BIN links to libpcap.so.0.8, which is not found."
+
+        # We will create a symbolic link to the missing library
+
+        if [ -f "/usr/lib64/libpcap.so" ]; then
+            echo "Creating symbolic link for libpcap.so.0.8 to libpcap.so"
+            ln -sf /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8
+            echo "Symbolic link created: /usr/lib64/libpcap.so.0.8 -> /usr/lib64/libpcap.so"
+        else
+            echo "Error: libpcap.so is not installed. Cannot create the symbolic link."
+            exit 1
+        fi
+    fi
+else
+    echo "Error: $MINIMEGA_BIN does not exist."
+    exit 1
+fi
+
 chown -R minimega:minimega /usr/share/doc/minimega
 chown -R minimega:minimega /opt/minimega
 chown -R minimega:minimega /etc/minimega
