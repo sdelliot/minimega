@@ -108,10 +108,9 @@ else
 fi
 
 MINIMEGA_BIN="/usr/bin/minimega"
-LIBPCAP_SO_0_8="/usr/lib/x86_64-linux-gnu/libpcap.so.0.8"
-LIBPCAP_VERSION="1.10.1"  # Specify the expected version of libpcap
-
-MINIMEGA_BIN="/usr/bin/minimega"
+LIBPCAP_SO_0_8="/usr/lib64/libpcap.so.0.8"
+LIBPCAP_SO="/usr/lib64/libpcap.so"
+LIBPCAP_SO_1="/usr/lib64/libpcap.so.1"
 
 if [ -f "$MINIMEGA_BIN" ]; then
     echo "Checking if $MINIMEGA_BIN links to libpcap..."
@@ -120,16 +119,20 @@ if [ -f "$MINIMEGA_BIN" ]; then
     LINKED_LIBS=$(ldd "$MINIMEGA_BIN" | grep "libpcap.so.0.8")
 
     if echo "$LINKED_LIBS" | grep -q "not found"; then
-        echo "Error: $MINIMEGA_BIN links to libpcap.so.0.8, which is not found."
+        echo "Warning: $MINIMEGA_BIN links to libpcap.so.0.8, which is not found."
 
-        # We will create a symbolic link to the missing library
-
-        if [ -f "/usr/lib64/libpcap.so" ]; then
+        # First, check if libpcap.so exists
+        if [ -f "$LIBPCAP_SO" ]; then
             echo "Creating symbolic link for libpcap.so.0.8 to libpcap.so"
-            ln -sf /usr/lib64/libpcap.so /usr/lib64/libpcap.so.0.8
-            echo "Symbolic link created: /usr/lib64/libpcap.so.0.8 -> /usr/lib64/libpcap.so"
+            ln -sf "$LIBPCAP_SO" "$LIBPCAP_SO_0_8"
+            echo "Symbolic link created: $LIBPCAP_SO_0_8 -> $LIBPCAP_SO"
+        # If libpcap.so doesn't exist, check for libpcap.so.1
+        elif [ -f "$LIBPCAP_SO_1" ]; then
+            echo "Creating symbolic link for libpcap.so.0.8 to libpcap.so.1"
+            ln -sf "$LIBPCAP_SO_1" "$LIBPCAP_SO_0_8"
+            echo "Symbolic link created: $LIBPCAP_SO_0_8 -> $LIBPCAP_SO_1"
         else
-            echo "Error: libpcap.so is not installed. Cannot create the symbolic link."
+            echo "Error: Neither libpcap.so nor libpcap.so.1 is installed. Cannot create the symbolic link."
             exit 1
         fi
     fi
