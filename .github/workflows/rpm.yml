@@ -21,10 +21,18 @@ jobs:
       id: rpm
       run: |
         chmod +x ./packaging/rpm/build.bash
-        # Set the compiler and linker flags
-        export CGO_CFLAGS="-I/usr/include"
-        export CGO_LDFLAGS="-L/usr/lib/x86_64-linux-gnu -l:libpcap.so.1.10.1"
 
+        export PCAPV=1.9.1
+        wget http://www.tcpdump.org/release/libpcap-$PCAPV.tar.gz
+        tar xvf libpcap-$PCAPV.tar.gz
+        pushd libpcap-$PCAPV
+        ./configure --with-pcap=linux
+        make
+        popd
+
+        export LD_LIBRARY_PATH="-L/usr/lib/x86_64-linux-gnu/libpcap-$PCAPV"
+        export CGO_LDFLAGS="-L/usr/lib/x86_64-linux-gnu/libpcap-$PCAPV"
+        export CGO_CPPFLAGS="-I/usr/lib/x86_64-linux-gnu/libpcap-$PCAPV"
         CGO_ENABLED=1 bash packaging/rpm/build.bash
         ldd bin/minimega
 
