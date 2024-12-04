@@ -16,7 +16,7 @@ jobs:
       id: rpm
       run: |
         chmod +x ./packaging/rpm/build.bash
-        ./packaging/rpm/build.bash
+        CGO_ENABLED=1 CGO_CFLAGS="-I/usr/include" CGO_LDFLAGS="-L/usr/lib/x86_64-linux-gnu -l:libpcap.so" bash packaging/rpm/build.bash
 
     - name: Upload artifact
       uses: actions/upload-artifact@v4.0.0
