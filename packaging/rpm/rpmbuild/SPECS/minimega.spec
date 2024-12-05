@@ -94,6 +94,17 @@ if [ $1 -eq 0 ] && [ -x "/usr/lib/systemd/systemd-update-helper" ]; then
     /usr/lib/systemd/systemd-update-helper remove-system-units minimega.service || :
 fi
 
+if [ $1 -eq 0 ]; then
+    /usr/bin/systemctl --no-reload disable minimega.service
+    /usr/bin/systemctl stop minimega.service >/dev/null 2>&1 ||:
+    /usr/bin/systemctl disable minimega.service
+
+fi
+if [ $1 -eq 1 ]; then
+    /usr/bin/systemctl --no-reload disable minimega.service
+    /usr/bin/systemctl stop %minimega.service
+fi
+
 %post -p /bin/sh
 #! /bin/sh
 
@@ -144,7 +155,14 @@ chown -R minimega:minimega /usr/share/doc/minimega
 chown -R minimega:minimega /opt/minimega
 chown -R minimega:minimega /etc/minimega
 
-%systemd_post minimega.service
+if [ $1 -eq 1 ]; then
+    /usr/bin/systemctl daemon-reload
+    /usr/bin/systemctl start minimega.service
+fi
+if [ $1 -eq 2 ]; then
+    /usr/bin/systemctl daemon-reload
+    /usr/bin/systemctl start minimega.service
+fi
 
 if [ $1 -eq 1 ] && [ -x "/usr/lib/systemd/systemd-update-helper" ]; then
     # Initial installation
