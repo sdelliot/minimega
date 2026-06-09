@@ -60,6 +60,10 @@
 
     <script type="module" crossorigin="anonymous" src="/novnc/app/error-handler.js"></script>
 
+    <script>
+        window.location.hash = `autoconnect=true&path=${window.location.pathname.substr(1)+"/ws"}`
+    </script>
+
     <script type="module">
         import UI from "/novnc/app/ui.js";
         import * as Log from '/novnc/core/util/logging.js';
