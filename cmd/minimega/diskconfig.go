@@ -27,26 +27,46 @@ type DiskConfig struct {
 
 type DiskConfigs []DiskConfig
 
-// ParseDiskConfig processes the input specifying the disk image path, interface,
-// and cache mode and udpates the vm config accordingly.
-func ParseDiskConfig(spec string, snapshot bool) (*DiskConfig, error) {
-	// NOTE: diskspec currently uses comma as a structural delimiter:
-	//
-	//   <path>[,<interface>[,<cache>]]
-	//
-	// As a result, paths/URLs containing commas are not supported by this
-	// parser. This is a pre-existing limitation of the diskspec grammar.
-	//
-	// We intentionally parse the diskspec first and then apply preprocessing
-	// only to the path component so that preprocessors like:
-	//
-	//   file:
-	//   http://
-	//   https://
-	//   tar:
-	//
-	// operate on the actual disk path rather than the full diskspec string.
+// diskSpecParts is the parsed representation of a diskspec before path
+// preprocessing and normalization are applied.
+type diskSpecParts struct {
+	Path      string
+	Interface string
+	Cache     string
+}
 
+// ParseDiskConfig processes the input specifying the disk image path, interface,
+// and cache mode and updates the vm config accordingly.
+func ParseDiskConfig(spec string, snapshot bool) (*DiskConfig, error) {
+	parts, err := parseDiskSpec(spec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Apply all CLI preprocessors to the path only. This preserves the
+	// interface/cache suffix semantics of diskspec while still allowing
+	// iomeshage and URL-based disk paths.
+	parts, err = preprocessDiskSpecPath(parts, cliPreprocess)
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := diskConfigFromParts(parts)
+	cfg.Path = checkPath(cfg.Path)
+
+	log.Info(`got path="%v", interface="%v", cache="%v"`, cfg.Path, cfg.Interface, cfg.Cache)
+
+	return cfg, nil
+}
+
+// parseDiskSpec parses a diskspec of the form:
+//
+//	<path>[,<interface>[,<cache>]]
+//
+// NOTE: diskspec currently uses comma as a structural delimiter. As a result,
+// paths/URLs containing commas are not supported by this parser. This is a
+// pre-existing limitation of the diskspec grammar.
+func parseDiskSpec(spec string) (*diskSpecParts, error) {
 	// example: /data/minimega/images/linux.qcow2,virtio,writeback
 	f := strings.Split(spec, ",")
 
@@ -78,24 +98,35 @@ func ParseDiskConfig(spec string, snapshot bool) (*DiskConfig, error) {
 		return nil, errors.New("malformed diskspec")
 	}
 
-	// Apply all CLI preprocessors to the path only. This preserves the
-	// interface/cache suffix semantics of diskspec while still allowing
-	// iomeshage and URL-based disk paths.
-	var err error
-	p, err = cliPreprocess(p)
+	return &diskSpecParts{
+		Path:      p,
+		Interface: i,
+		Cache:     c,
+	}, nil
+}
+
+// preprocessDiskSpecPath applies preprocessing only to the path portion of a
+// parsed diskspec.
+func preprocessDiskSpecPath(parts *diskSpecParts, preprocess func(string) (string, error)) (*diskSpecParts, error) {
+	path, err := preprocess(parts.Path)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Info(`got path="%v", interface="%v", cache="%v"`, p, i, c)
-
-	p = checkPath(p)
-
-	return &DiskConfig{
-		Path:      p,
-		Cache:     c,
-		Interface: i,
+	return &diskSpecParts{
+		Path:      path,
+		Interface: parts.Interface,
+		Cache:     parts.Cache,
 	}, nil
+}
+
+// diskConfigFromParts converts parsed diskspec parts into a DiskConfig.
+func diskConfigFromParts(parts *diskSpecParts) *DiskConfig {
+	return &DiskConfig{
+		Path:      parts.Path,
+		Interface: parts.Interface,
+		Cache:     parts.Cache,
+	}
 }
 
 // String representation of DiskConfig, should be able to parse back into a
