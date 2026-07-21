@@ -113,6 +113,13 @@ func checkExternal() error {
 		log.Warn("no kvm module detected, is virtualization enabled?")
 	}
 
+	// Android runtime is optional
+	if err := checkAndroidDependencies(); err != nil {
+		log.Warn("android runtime unavailable: %v", err)
+	} else {
+		log.Info("android runtime available")
+	}
+
 	return nil
 }
 
