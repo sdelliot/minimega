@@ -137,7 +137,7 @@ func (v *AndroidConfig) WriteConfig(w io.Writer) error {
 		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.ExtraArgs, " "))
 	}
 	fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.RequireKVM)
-	fmt.Fprintf(w, "vm config android-writable-system true\n")
+	fmt.Fprintf(w, "vm config android-writable-system %t\n", v.WritableSystem)
 
 	return nil
 }
