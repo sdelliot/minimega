@@ -129,21 +129,16 @@ func (v *AndroidConfig) WriteConfig(w io.Writer) error {
 	if v.AVDDir != "" {
 		fmt.Fprintf(w, "vm config android-avd-dir %v\n", v.AVDDir)
 	}
-	if v.NoWindow != true {
-		fmt.Fprintf(w, "vm config android-no-window %t\n", v.NoWindow)
-	}
+	fmt.Fprintf(w, "vm config android-no-window %t\n", v.NoWindow)
 	if v.ConsoleBasePort != 0 {
 		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.ConsoleBasePort)
 	}
 	if len(v.ExtraArgs) > 0 {
 		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.ExtraArgs, " "))
 	}
-	if v.RequireKVM != true {
-		fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.RequireKVM)
-	}
-	if v.WritableSystem {
-		fmt.Fprintf(w, "vm config android-writable-system true\n")
-	}
+	fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.RequireKVM)
+	fmt.Fprintf(w, "vm config android-writable-system true\n")
+
 	return nil
 }
 
@@ -180,7 +175,7 @@ func (v *AndroidConfig) ReadConfig(r io.Reader, ns string) error {
 		case "android-console-base-port":
 			v.ConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
 		case "android-extra-args":
-			v.ExtraArgs = strings.Fields(strings.Join(config[1:], " "))
+			v.ExtraArgs = fieldsQuoteEscape("\"", strings.Join(config[1:], " "))
 		case "android-require-kvm":
 			v.RequireKVM, _ = strconv.ParseBool(config[1])
 		case "android-writable-system":
@@ -189,6 +184,15 @@ func (v *AndroidConfig) ReadConfig(r io.Reader, ns string) error {
 	}
 
 	return scanner.Err()
+}
+
+func androidConfiguredAny() bool {
+	for _, ns := range namespaces {
+		if androidConfigured(ns.vmConfig.AndroidConfig) {
+			return true
+		}
+	}
+	return false
 }
 
 func findAndroidEmulator(path string) (string, error) {
@@ -234,10 +238,18 @@ func androidAVDExists(cfg AndroidConfig) error {
 	return nil
 }
 
-func checkAndroidDependencies() error {
-	ns := GetNamespace()
-	cfg := ns.vmConfig.AndroidConfig
+func androidConfigured(cfg AndroidConfig) bool {
+	return cfg.SDKPath != "" ||
+		cfg.EmulatorPath != "" ||
+		cfg.ADBPath != "" ||
+		cfg.AVDName != "" ||
+		cfg.AVDDir != "" ||
+		cfg.ConsoleBasePort != 0 ||
+		len(cfg.ExtraArgs) > 0 ||
+		cfg.WritableSystem
+}
 
+func checkAndroidDependencies(cfg AndroidConfig) error {
 	if err := validateAndroidConfig(cfg); err != nil {
 		return err
 	}
