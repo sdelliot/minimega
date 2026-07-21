@@ -299,45 +299,6 @@ Note: this configuration only applies to KVM-based VMs.`,
 			return nil
 		}),
 	},
-	{ // vm config android-template-dir
-		HelpShort: "configure android template directory",
-		Patterns:  []string{"vm config android-template-dir [value]"},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.TemplateDir
-				return nil
-			}
-			ns.vmConfig.TemplateDir = checkPath(c.StringArgs["value"])
-			return nil
-		}),
-	},
-	{ // vm config android-extra-args
-		HelpShort: "configure extra android emulator args",
-		Patterns:  []string{"vm config android-extra-args [value]..."},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.ListArgs) == 0 {
-				if len(ns.vmConfig.ExtraArgs) == 0 {
-					return nil
-				}
-				r.Response = fmt.Sprintf("%v", ns.vmConfig.ExtraArgs)
-				return nil
-			}
-			ns.vmConfig.ExtraArgs = c.ListArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-gpu
-		HelpShort: "configure android gpu mode",
-		Patterns:  []string{"vm config android-gpu [value]"},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.GPUMode
-				return nil
-			}
-			ns.vmConfig.GPUMode = c.StringArgs["value"]
-			return nil
-		}),
-	},
 	{ // vm config android-no-window
 		HelpShort: "configure android no-window mode",
 		Patterns:  []string{"vm config android-no-window [true,false]"},
@@ -347,42 +308,6 @@ Note: this configuration only applies to KVM-based VMs.`,
 				return nil
 			}
 			ns.vmConfig.NoWindow = c.BoolArgs["true"]
-			return nil
-		}),
-	},
-	{ // vm config android-writable-system
-		HelpShort: "configure android writable-system mode",
-		Patterns:  []string{"vm config android-writable-system [true,false]"},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.WritableSystem)
-				return nil
-			}
-			ns.vmConfig.WritableSystem = c.BoolArgs["true"]
-			return nil
-		}),
-	},
-	{ // vm config android-require-kvm
-		HelpShort: "configure whether android requires kvm",
-		Patterns:  []string{"vm config android-require-kvm [true,false]"},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.RequireKVM)
-				return nil
-			}
-			ns.vmConfig.RequireKVM = c.BoolArgs["true"]
-			return nil
-		}),
-	},
-	{ // vm config android-read-only-template
-		HelpShort: "configure whether android template is read-only",
-		Patterns:  []string{"vm config android-read-only-template [true,false]"},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.ReadOnlyTemplate)
-				return nil
-			}
-			ns.vmConfig.ReadOnlyTemplate = c.BoolArgs["true"]
 			return nil
 		}),
 	},
@@ -402,19 +327,42 @@ Note: this configuration only applies to KVM-based VMs.`,
 			return nil
 		}),
 	},
-	{ // vm config android-adb-base-port
-		HelpShort: "configure android adb base port",
-		Patterns:  []string{"vm config android-adb-base-port [value]"},
+	{ // vm config android-extra-args
+		HelpShort: "configure extra android emulator args",
+		Patterns:  []string{"vm config android-extra-args [value]..."},
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = strconv.FormatUint(ns.vmConfig.ADBBasePort, 10)
+			if len(c.ListArgs) == 0 {
+				if len(ns.vmConfig.ExtraArgs) == 0 {
+					return nil
+				}
+				r.Response = fmt.Sprintf("%v", ns.vmConfig.ExtraArgs)
 				return nil
 			}
-			v, err := strconv.ParseUint(c.StringArgs["value"], 10, 64)
-			if err != nil {
-				return err
+			ns.vmConfig.ExtraArgs = c.ListArgs["value"]
+			return nil
+		}),
+	},
+	{ // vm config android-require-kvm
+		HelpShort: "configure whether android requires kvm",
+		Patterns:  []string{"vm config android-require-kvm [true,false]"},
+		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
+			if len(c.BoolArgs) == 0 {
+				r.Response = strconv.FormatBool(ns.vmConfig.RequireKVM)
+				return nil
 			}
-			ns.vmConfig.ADBBasePort = v
+			ns.vmConfig.RequireKVM = c.BoolArgs["true"]
+			return nil
+		}),
+	},
+	{ // vm config android-writable-system
+		HelpShort: "configure android writable-system mode",
+		Patterns:  []string{"vm config android-writable-system [true,false]"},
+		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
+			if len(c.BoolArgs) == 0 {
+				r.Response = strconv.FormatBool(ns.vmConfig.WritableSystem)
+				return nil
+			}
+			ns.vmConfig.WritableSystem = c.BoolArgs["true"]
 			return nil
 		}),
 	},
@@ -426,15 +374,11 @@ Note: this configuration only applies to KVM-based VMs.`,
 			"clear vm config <android-adb,>",
 			"clear vm config <android-avd,>",
 			"clear vm config <android-avd-dir,>",
-			"clear vm config <android-template-dir,>",
-			"clear vm config <android-extra-args,>",
-			"clear vm config <android-gpu,>",
 			"clear vm config <android-no-window,>",
-			"clear vm config <android-writable-system,>",
-			"clear vm config <android-require-kvm,>",
-			"clear vm config <android-read-only-template,>",
 			"clear vm config <android-console-base-port,>",
-			"clear vm config <android-adb-base-port,>",
+			"clear vm config <android-extra-args,>",
+			"clear vm config <android-require-kvm,>",
+			"clear vm config <android-writable-system,>",
 		},
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			for k := range c.BoolArgs {

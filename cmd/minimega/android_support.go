@@ -14,20 +14,16 @@ import (
 )
 
 type AndroidConfig struct {
-	SDKPath          string
-	EmulatorPath     string
-	ADBPath          string
-	AVDName          string
-	AVDDir           string
-	WritableSystem   bool
-	NoWindow         bool
-	GPUMode          string
-	ExtraArgs        []string
-	RequireKVM       bool
-	ConsoleBasePort  uint64
-	ADBBasePort      uint64
-	ReadOnlyTemplate bool
-	TemplateDir      string
+	SDKPath         string
+	EmulatorPath    string
+	ADBPath         string
+	AVDName         string
+	AVDDir          string
+	NoWindow        bool
+	ConsoleBasePort uint64
+	ExtraArgs       []string
+	RequireKVM      bool
+	WritableSystem  bool
 }
 
 func (old AndroidConfig) Copy() AndroidConfig {
@@ -47,15 +43,11 @@ func (vm *AndroidConfig) String() string {
 	fmt.Fprintf(w, "ADB Path:\t%v\n", vm.ADBPath)
 	fmt.Fprintf(w, "AVD Name:\t%v\n", vm.AVDName)
 	fmt.Fprintf(w, "AVD Dir:\t%v\n", vm.AVDDir)
-	fmt.Fprintf(w, "Template Dir:\t%v\n", vm.TemplateDir)
-	fmt.Fprintf(w, "Read Only Template:\t%v\n", vm.ReadOnlyTemplate)
-	fmt.Fprintf(w, "Writable System:\t%v\n", vm.WritableSystem)
 	fmt.Fprintf(w, "No Window:\t%v\n", vm.NoWindow)
-	fmt.Fprintf(w, "GPU Mode:\t%v\n", vm.GPUMode)
+	fmt.Fprintf(w, "Console Base Port:\t%v\n", vm.ConsoleBasePort)
 	fmt.Fprintf(w, "Extra Args:\t%v\n", vm.ExtraArgs)
 	fmt.Fprintf(w, "Require KVM:\t%v\n", vm.RequireKVM)
-	fmt.Fprintf(w, "Console Base Port:\t%v\n", vm.ConsoleBasePort)
-	fmt.Fprintf(w, "ADB Base Port:\t%v\n", vm.ADBBasePort)
+	fmt.Fprintf(w, "Writable System:\t%v\n", vm.WritableSystem)
 	w.Flush()
 	fmt.Fprintln(&o)
 	return o.String()
@@ -73,24 +65,16 @@ func (v *AndroidConfig) Info(field string) (string, error) {
 		return v.AVDName, nil
 	case "android-avd-dir":
 		return v.AVDDir, nil
-	case "android-template-dir":
-		return v.TemplateDir, nil
-	case "android-writable-system":
-		return strconv.FormatBool(v.WritableSystem), nil
 	case "android-no-window":
 		return strconv.FormatBool(v.NoWindow), nil
-	case "android-gpu":
-		return v.GPUMode, nil
+	case "android-console-base-port":
+		return strconv.FormatUint(v.ConsoleBasePort, 10), nil
 	case "android-extra-args":
 		return fmt.Sprintf("%v", v.ExtraArgs), nil
 	case "android-require-kvm":
 		return strconv.FormatBool(v.RequireKVM), nil
-	case "android-console-base-port":
-		return strconv.FormatUint(v.ConsoleBasePort, 10), nil
-	case "android-adb-base-port":
-		return strconv.FormatUint(v.ADBBasePort, 10), nil
-	case "android-read-only-template":
-		return strconv.FormatBool(v.ReadOnlyTemplate), nil
+	case "android-writable-system":
+		return strconv.FormatBool(v.WritableSystem), nil
 	}
 
 	return "", fmt.Errorf("invalid info field: %v", field)
@@ -112,17 +96,11 @@ func (v *AndroidConfig) Clear(mask string) {
 	if mask == Wildcard || mask == "android-avd-dir" {
 		v.AVDDir = ""
 	}
-	if mask == Wildcard || mask == "android-template-dir" {
-		v.TemplateDir = ""
-	}
-	if mask == Wildcard || mask == "android-writable-system" {
-		v.WritableSystem = false
-	}
 	if mask == Wildcard || mask == "android-no-window" {
 		v.NoWindow = true
 	}
-	if mask == Wildcard || mask == "android-gpu" {
-		v.GPUMode = ""
+	if mask == Wildcard || mask == "android-console-base-port" {
+		v.ConsoleBasePort = 0
 	}
 	if mask == Wildcard || mask == "android-extra-args" {
 		v.ExtraArgs = nil
@@ -130,14 +108,8 @@ func (v *AndroidConfig) Clear(mask string) {
 	if mask == Wildcard || mask == "android-require-kvm" {
 		v.RequireKVM = true
 	}
-	if mask == Wildcard || mask == "android-console-base-port" {
-		v.ConsoleBasePort = 0
-	}
-	if mask == Wildcard || mask == "android-adb-base-port" {
-		v.ADBBasePort = 0
-	}
-	if mask == Wildcard || mask == "android-read-only-template" {
-		v.ReadOnlyTemplate = true
+	if mask == Wildcard || mask == "android-writable-system" {
+		v.WritableSystem = false
 	}
 }
 
@@ -157,17 +129,11 @@ func (v *AndroidConfig) WriteConfig(w io.Writer) error {
 	if v.AVDDir != "" {
 		fmt.Fprintf(w, "vm config android-avd-dir %v\n", v.AVDDir)
 	}
-	if v.TemplateDir != "" {
-		fmt.Fprintf(w, "vm config android-template-dir %v\n", v.TemplateDir)
-	}
-	if v.WritableSystem {
-		fmt.Fprintf(w, "vm config android-writable-system true\n")
-	}
 	if v.NoWindow != true {
 		fmt.Fprintf(w, "vm config android-no-window %t\n", v.NoWindow)
 	}
-	if v.GPUMode != "" {
-		fmt.Fprintf(w, "vm config android-gpu %v\n", v.GPUMode)
+	if v.ConsoleBasePort != 0 {
+		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.ConsoleBasePort)
 	}
 	if len(v.ExtraArgs) > 0 {
 		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.ExtraArgs, " "))
@@ -175,14 +141,8 @@ func (v *AndroidConfig) WriteConfig(w io.Writer) error {
 	if v.RequireKVM != true {
 		fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.RequireKVM)
 	}
-	if v.ConsoleBasePort != 0 {
-		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.ConsoleBasePort)
-	}
-	if v.ADBBasePort != 0 {
-		fmt.Fprintf(w, "vm config android-adb-base-port %v\n", v.ADBBasePort)
-	}
-	if v.ReadOnlyTemplate != true {
-		fmt.Fprintf(w, "vm config android-read-only-template %t\n", v.ReadOnlyTemplate)
+	if v.WritableSystem {
+		fmt.Fprintf(w, "vm config android-writable-system true\n")
 	}
 	return nil
 }
@@ -215,24 +175,16 @@ func (v *AndroidConfig) ReadConfig(r io.Reader, ns string) error {
 			v.AVDName = config[1]
 		case "android-avd-dir":
 			v.AVDDir = config[1]
-		case "android-template-dir":
-			v.TemplateDir = config[1]
-		case "android-writable-system":
-			v.WritableSystem, _ = strconv.ParseBool(config[1])
 		case "android-no-window":
 			v.NoWindow, _ = strconv.ParseBool(config[1])
-		case "android-gpu":
-			v.GPUMode = config[1]
+		case "android-console-base-port":
+			v.ConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
 		case "android-extra-args":
 			v.ExtraArgs = strings.Fields(strings.Join(config[1:], " "))
 		case "android-require-kvm":
 			v.RequireKVM, _ = strconv.ParseBool(config[1])
-		case "android-console-base-port":
-			v.ConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
-		case "android-adb-base-port":
-			v.ADBBasePort, _ = strconv.ParseUint(config[1], 10, 64)
-		case "android-read-only-template":
-			v.ReadOnlyTemplate, _ = strconv.ParseBool(config[1])
+		case "android-writable-system":
+			v.WritableSystem, _ = strconv.ParseBool(config[1])
 		}
 	}
 
@@ -264,10 +216,6 @@ func findADB(path string) (string, error) {
 func validateAndroidConfig(cfg AndroidConfig) error {
 	if cfg.ConsoleBasePort > 0 && cfg.ConsoleBasePort < 1024 {
 		return fmt.Errorf("android-console-base-port must be >= 1024")
-	}
-
-	if cfg.ADBBasePort > 0 && cfg.ADBBasePort < 1024 {
-		return fmt.Errorf("android-adb-base-port must be >= 1024")
 	}
 
 	return nil
