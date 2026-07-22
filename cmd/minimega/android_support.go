@@ -14,22 +14,62 @@ import (
 )
 
 type AndroidConfig struct {
-	SDKPath         string
-	EmulatorPath    string
-	ADBPath         string
-	AVDName         string
-	AVDDir          string
-	NoWindow        bool
-	ConsoleBasePort uint64
-	ExtraArgs       []string
-	RequireKVM      bool
-	WritableSystem  bool
+	// Configure the host-side Android SDK root directory.
+	//
+	// This path is interpreted on the minimega host and is not treated as a
+	// file served from the minimega files directory.
+	AndroidSDKPath string
+
+	// Configure the host-side Android emulator binary.
+	//
+	// This value may be an absolute path or a binary name resolvable via the
+	// host PATH.
+	AndroidEmulatorPath string
+
+	// Configure the host-side adb binary.
+	//
+	// This value may be an absolute path or a binary name resolvable via the
+	// host PATH.
+	AndroidADBPath string
+
+	// Configure the Android Virtual Device (AVD) name to use when launching
+	// Android VMs.
+	AndroidAVD string
+
+	// Configure the host-side directory containing Android AVD data.
+	//
+	// This should generally contain entries such as:
+	//   <avd-dir>/<avd-name>.avd
+	AndroidAVDDir string
+
+	// Launch Android VMs without creating a local emulator window.
+	//
+	// Default: true
+	AndroidNoWindow bool
+
+	// Configure the base console port for Android emulator instances.
+	//
+	// Default: 0
+	AndroidConsoleBasePort uint64
+
+	// Additional raw arguments to append to the Android emulator command line.
+	AndroidExtraArgs []string
+
+	// Require KVM support for Android runtime validation and launch.
+	//
+	// Default: true
+	AndroidRequireKVM bool
+
+	// Request writable system behavior for the Android emulator runtime.
+	//
+	// Default: false
+	AndroidWritableSystem bool
 }
 
 func (old AndroidConfig) Copy() AndroidConfig {
 	res := old
-	res.ExtraArgs = make([]string, len(old.ExtraArgs))
-	copy(res.ExtraArgs, old.ExtraArgs)
+	res.AndroidExtraArgs = make([]string, len(old.AndroidExtraArgs))
+	copy(res.AndroidExtraArgs, old.AndroidExtraArgs)
 	return res
 }
 
@@ -38,16 +78,16 @@ func (vm *AndroidConfig) String() string {
 	w := new(tabwriter.Writer)
 	w.Init(&o, 5, 0, 1, ' ', 0)
 	fmt.Fprintln(&o, "Android configuration:")
-	fmt.Fprintf(w, "SDK Path:\t%v\n", vm.SDKPath)
-	fmt.Fprintf(w, "Emulator Path:\t%v\n", vm.EmulatorPath)
-	fmt.Fprintf(w, "ADB Path:\t%v\n", vm.ADBPath)
-	fmt.Fprintf(w, "AVD Name:\t%v\n", vm.AVDName)
-	fmt.Fprintf(w, "AVD Dir:\t%v\n", vm.AVDDir)
-	fmt.Fprintf(w, "No Window:\t%v\n", vm.NoWindow)
-	fmt.Fprintf(w, "Console Base Port:\t%v\n", vm.ConsoleBasePort)
-	fmt.Fprintf(w, "Extra Args:\t%v\n", vm.ExtraArgs)
-	fmt.Fprintf(w, "Require KVM:\t%v\n", vm.RequireKVM)
-	fmt.Fprintf(w, "Writable System:\t%v\n", vm.WritableSystem)
+	fmt.Fprintf(w, "SDK Path:\t%v\n", vm.AndroidSDKPath)
+	fmt.Fprintf(w, "Emulator Path:\t%v\n", vm.AndroidEmulatorPath)
+	fmt.Fprintf(w, "ADB Path:\t%v\n", vm.AndroidADBPath)
+	fmt.Fprintf(w, "AVD Name:\t%v\n", vm.AndroidAVD)
+	fmt.Fprintf(w, "AVD Dir:\t%v\n", vm.AndroidAVDDir)
+	fmt.Fprintf(w, "No Window:\t%v\n", vm.AndroidNoWindow)
+	fmt.Fprintf(w, "Console Base Port:\t%v\n", vm.AndroidConsoleBasePort)
+	fmt.Fprintf(w, "Extra Args:\t%v\n", vm.AndroidExtraArgs)
+	fmt.Fprintf(w, "Require KVM:\t%v\n", vm.AndroidRequireKVM)
+	fmt.Fprintf(w, "Writable System:\t%v\n", vm.AndroidWritableSystem)
 	w.Flush()
 	fmt.Fprintln(&o)
 	return o.String()
@@ -56,25 +96,25 @@ func (vm *AndroidConfig) String() string {
 func (v *AndroidConfig) Info(field string) (string, error) {
 	switch field {
 	case "android-sdk":
-		return v.SDKPath, nil
+		return v.AndroidSDKPath, nil
 	case "android-emulator":
-		return v.EmulatorPath, nil
+		return v.AndroidEmulatorPath, nil
 	case "android-adb":
-		return v.ADBPath, nil
+		return v.AndroidADBPath, nil
 	case "android-avd":
-		return v.AVDName, nil
+		return v.AndroidAVD, nil
 	case "android-avd-dir":
-		return v.AVDDir, nil
+		return v.AndroidAVDDir, nil
 	case "android-no-window":
-		return strconv.FormatBool(v.NoWindow), nil
+		return strconv.FormatBool(v.AndroidNoWindow), nil
 	case "android-console-base-port":
-		return strconv.FormatUint(v.ConsoleBasePort, 10), nil
+		return strconv.FormatUint(v.AndroidConsoleBasePort, 10), nil
 	case "android-extra-args":
-		return fmt.Sprintf("%v", v.ExtraArgs), nil
+		return fmt.Sprintf("%v", v.AndroidExtraArgs), nil
 	case "android-require-kvm":
-		return strconv.FormatBool(v.RequireKVM), nil
+		return strconv.FormatBool(v.AndroidRequireKVM), nil
 	case "android-writable-system":
-		return strconv.FormatBool(v.WritableSystem), nil
+		return strconv.FormatBool(v.AndroidWritableSystem), nil
 	}
 
 	return "", fmt.Errorf("invalid info field: %v", field)
@@ -82,62 +122,68 @@ func (v *AndroidConfig) Info(field string) (string, error) {
 
 func (v *AndroidConfig) Clear(mask string) {
 	if mask == Wildcard || mask == "android-sdk" {
-		v.SDKPath = ""
+		v.AndroidSDKPath = ""
 	}
 	if mask == Wildcard || mask == "android-emulator" {
-		v.EmulatorPath = ""
+		v.AndroidEmulatorPath = ""
 	}
 	if mask == Wildcard || mask == "android-adb" {
-		v.ADBPath = ""
+		v.AndroidADBPath = ""
 	}
 	if mask == Wildcard || mask == "android-avd" {
-		v.AVDName = ""
+		v.AndroidAVD = ""
 	}
 	if mask == Wildcard || mask == "android-avd-dir" {
-		v.AVDDir = ""
+		v.AndroidAVDDir = ""
 	}
 	if mask == Wildcard || mask == "android-no-window" {
-		v.NoWindow = true
+		v.AndroidNoWindow = true
 	}
 	if mask == Wildcard || mask == "android-console-base-port" {
-		v.ConsoleBasePort = 0
+		v.AndroidConsoleBasePort = 0
 	}
 	if mask == Wildcard || mask == "android-extra-args" {
-		v.ExtraArgs = nil
+		v.AndroidExtraArgs = nil
 	}
 	if mask == Wildcard || mask == "android-require-kvm" {
-		v.RequireKVM = true
+		v.AndroidRequireKVM = true
 	}
 	if mask == Wildcard || mask == "android-writable-system" {
-		v.WritableSystem = false
+		v.AndroidWritableSystem = false
 	}
 }
 
 func (v *AndroidConfig) WriteConfig(w io.Writer) error {
-	if v.SDKPath != "" {
-		fmt.Fprintf(w, "vm config android-sdk %v\n", v.SDKPath)
+	if v.AndroidSDKPath != "" {
+		fmt.Fprintf(w, "vm config android-sdk %v\n", v.AndroidSDKPath)
 	}
-	if v.EmulatorPath != "" {
-		fmt.Fprintf(w, "vm config android-emulator %v\n", v.EmulatorPath)
+	if v.AndroidEmulatorPath != "" {
+		fmt.Fprintf(w, "vm config android-emulator %v\n", v.AndroidEmulatorPath)
 	}
-	if v.ADBPath != "" {
-		fmt.Fprintf(w, "vm config android-adb %v\n", v.ADBPath)
+	if v.AndroidADBPath != "" {
+		fmt.Fprintf(w, "vm config android-adb %v\n", v.AndroidADBPath)
 	}
-	if v.AVDName != "" {
-		fmt.Fprintf(w, "vm config android-avd %v\n", v.AVDName)
+	if v.AndroidAVD != "" {
+		fmt.Fprintf(w, "vm config android-avd %v\n", v.AndroidAVD)
 	}
-	if v.AVDDir != "" {
-		fmt.Fprintf(w, "vm config android-avd-dir %v\n", v.AVDDir)
+	if v.AndroidAVDDir != "" {
+		fmt.Fprintf(w, "vm config android-avd-dir %v\n", v.AndroidAVDDir)
 	}
-	fmt.Fprintf(w, "vm config android-no-window %t\n", v.NoWindow)
-	if v.ConsoleBasePort != 0 {
-		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.ConsoleBasePort)
+	if v.AndroidNoWindow != true {
+		fmt.Fprintf(w, "vm config android-no-window %t\n", v.AndroidNoWindow)
 	}
-	if len(v.ExtraArgs) > 0 {
-		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.ExtraArgs, " "))
+	if v.AndroidConsoleBasePort != 0 {
+		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.AndroidConsoleBasePort)
 	}
-	fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.RequireKVM)
-	fmt.Fprintf(w, "vm config android-writable-system %t\n", v.WritableSystem)
+	if len(v.AndroidExtraArgs) > 0 {
+		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.AndroidExtraArgs, " "))
+	}
+	if v.AndroidRequireKVM != true {
+		fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.AndroidRequireKVM)
+	}
+	if v.AndroidWritableSystem != false {
+		fmt.Fprintf(w, "vm config android-writable-system %t\n", v.AndroidWritableSystem)
+	}
 
 	return nil
 }
@@ -161,25 +207,25 @@ func (v *AndroidConfig) ReadConfig(r io.Reader, ns string) error {
 
 		switch field {
 		case "android-sdk":
-			v.SDKPath = config[1]
+			v.AndroidSDKPath = config[1]
 		case "android-emulator":
-			v.EmulatorPath = config[1]
+			v.AndroidEmulatorPath = config[1]
 		case "android-adb":
-			v.ADBPath = config[1]
+			v.AndroidADBPath = config[1]
 		case "android-avd":
-			v.AVDName = config[1]
+			v.AndroidAVD = config[1]
 		case "android-avd-dir":
-			v.AVDDir = config[1]
+			v.AndroidAVDDir = config[1]
 		case "android-no-window":
-			v.NoWindow, _ = strconv.ParseBool(config[1])
+			v.AndroidNoWindow, _ = strconv.ParseBool(config[1])
 		case "android-console-base-port":
-			v.ConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
+			v.AndroidConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
 		case "android-extra-args":
-			v.ExtraArgs = fieldsQuoteEscape("\"", strings.Join(config[1:], " "))
+			v.AndroidExtraArgs = fieldsQuoteEscape("\"", strings.Join(config[1:], " "))
 		case "android-require-kvm":
-			v.RequireKVM, _ = strconv.ParseBool(config[1])
+			v.AndroidRequireKVM, _ = strconv.ParseBool(config[1])
 		case "android-writable-system":
-			v.WritableSystem, _ = strconv.ParseBool(config[1])
+			v.AndroidWritableSystem, _ = strconv.ParseBool(config[1])
 		}
 	}
 
@@ -218,7 +264,7 @@ func findADB(path string) (string, error) {
 }
 
 func validateAndroidConfig(cfg AndroidConfig) error {
-	if cfg.ConsoleBasePort > 0 && cfg.ConsoleBasePort < 1024 {
+	if cfg.AndroidConsoleBasePort > 0 && cfg.AndroidConsoleBasePort < 1024 {
 		return fmt.Errorf("android-console-base-port must be >= 1024")
 	}
 
@@ -226,11 +272,11 @@ func validateAndroidConfig(cfg AndroidConfig) error {
 }
 
 func androidAVDExists(cfg AndroidConfig) error {
-	if cfg.AVDName == "" || cfg.AVDDir == "" {
+	if cfg.AndroidAVD == "" || cfg.AndroidAVDDir == "" {
 		return nil
 	}
 
-	p := filepath.Join(cfg.AVDDir, cfg.AVDName+".avd")
+	p := filepath.Join(cfg.AndroidAVDDir, cfg.AndroidAVD+".avd")
 	if _, err := os.Stat(p); err != nil {
 		return err
 	}
@@ -239,14 +285,14 @@ func androidAVDExists(cfg AndroidConfig) error {
 }
 
 func androidConfigured(cfg AndroidConfig) bool {
-	return cfg.SDKPath != "" ||
-		cfg.EmulatorPath != "" ||
-		cfg.ADBPath != "" ||
-		cfg.AVDName != "" ||
-		cfg.AVDDir != "" ||
-		cfg.ConsoleBasePort != 0 ||
-		len(cfg.ExtraArgs) > 0 ||
-		cfg.WritableSystem
+	return cfg.AndroidSDKPath != "" ||
+		cfg.AndroidEmulatorPath != "" ||
+		cfg.AndroidADBPath != "" ||
+		cfg.AndroidAVD != "" ||
+		cfg.AndroidAVDDir != "" ||
+		cfg.AndroidConsoleBasePort != 0 ||
+		len(cfg.AndroidExtraArgs) > 0 ||
+		cfg.AndroidWritableSystem
 }
 
 func checkAndroidDependencies(cfg AndroidConfig) error {
@@ -254,21 +300,21 @@ func checkAndroidDependencies(cfg AndroidConfig) error {
 		return err
 	}
 
-	if cfg.SDKPath != "" {
-		if _, err := os.Stat(cfg.SDKPath); err != nil {
+	if cfg.AndroidSDKPath != "" {
+		if _, err := os.Stat(cfg.AndroidSDKPath); err != nil {
 			return fmt.Errorf("android sdk path invalid: %v", err)
 		}
 	}
 
-	if _, err := findAndroidEmulator(cfg.EmulatorPath); err != nil {
+	if _, err := findAndroidEmulator(cfg.AndroidEmulatorPath); err != nil {
 		return fmt.Errorf("android emulator not found: %v", err)
 	}
 
-	if _, err := findADB(cfg.ADBPath); err != nil {
+	if _, err := findADB(cfg.AndroidADBPath); err != nil {
 		return fmt.Errorf("android adb not found: %v", err)
 	}
 
-	if cfg.RequireKVM && !lsModule("kvm") {
+	if cfg.AndroidRequireKVM && !lsModule("kvm") {
 		return fmt.Errorf("android requires kvm but kvm kernel module not detected")
 	}
 

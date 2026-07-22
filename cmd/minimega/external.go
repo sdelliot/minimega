@@ -115,14 +115,12 @@ func checkExternal() error {
 
 	// Android runtime is optional and only checked when Android appears configured
 	if androidConfiguredAny() {
-		checked := false
 		for _, ns := range namespaces {
 			cfg := ns.vmConfig.AndroidConfig
 			if !androidConfigured(cfg) {
 				continue
 			}
 
-			checked = true
 			if err := checkAndroidDependencies(cfg); err != nil {
 				log.Warn("android runtime unavailable: %v", err)
 				break
@@ -131,10 +129,6 @@ func checkExternal() error {
 				break
 			}
 		}
-
-		// if androidConfiguredAny somehow returned true but we found nothing usable,
-		// do nothing further -- this should be unreachable in normal operation
-		_ = checked
 	}
 
 	return nil
