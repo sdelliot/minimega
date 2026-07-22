@@ -15,128 +15,152 @@ import (
 
 var vmconfigerCLIHandlers = []minicli.Handler{
 	{
-		HelpShort: "configures sdk",
-		HelpLong:  ``,
+		HelpShort: "configures android-sdk",
+		HelpLong: `Configure the host-side Android SDK root directory.
+
+This path is interpreted on the minimega host and is not treated as a
+file served from the minimega files directory.
+`,
 		Patterns: []string{
-			"vm config sdk [value]",
+			"vm config android-sdk [value]",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.SDKPath
+				r.Response = ns.vmConfig.AndroidSDKPath
 				return nil
 			}
 
 			v := checkPath(c.StringArgs["value"])
 
-			ns.vmConfig.SDKPath = v
+			ns.vmConfig.AndroidSDKPath = v
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures emulator",
-		HelpLong:  ``,
+		HelpShort: "configures android-emulator",
+		HelpLong: `Configure the host-side Android emulator binary.
+
+This value may be an absolute path or a binary name resolvable via the
+host PATH.
+`,
 		Patterns: []string{
-			"vm config emulator [value]",
+			"vm config android-emulator [value]",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.EmulatorPath
+				r.Response = ns.vmConfig.AndroidEmulatorPath
 				return nil
 			}
 
 			v := checkPath(c.StringArgs["value"])
 
-			ns.vmConfig.EmulatorPath = v
+			ns.vmConfig.AndroidEmulatorPath = v
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures adb",
-		HelpLong:  ``,
+		HelpShort: "configures android-adb",
+		HelpLong: `Configure the host-side adb binary.
+
+This value may be an absolute path or a binary name resolvable via the
+host PATH.
+`,
 		Patterns: []string{
-			"vm config adb [value]",
+			"vm config android-adb [value]",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.ADBPath
+				r.Response = ns.vmConfig.AndroidADBPath
 				return nil
 			}
 
 			v := checkPath(c.StringArgs["value"])
 
-			ns.vmConfig.ADBPath = v
+			ns.vmConfig.AndroidADBPath = v
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures avdname",
-		HelpLong:  ``,
+		HelpShort: "configures android-avd",
+		HelpLong: `Configure the Android Virtual Device (AVD) name to use when launching
+Android VMs.
+`,
 		Patterns: []string{
-			"vm config avdname [value]",
+			"vm config android-avd [value]",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.AVDName
+				r.Response = ns.vmConfig.AndroidAVD
 				return nil
 			}
 
-			ns.vmConfig.AVDName = c.StringArgs["value"]
+			ns.vmConfig.AndroidAVD = c.StringArgs["value"]
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures avddir",
-		HelpLong:  ``,
+		HelpShort: "configures android-avddir",
+		HelpLong: `Configure the host-side directory containing Android AVD data.
+
+This should generally contain entries such as:
+  <avd-dir>/<avd-name>.avd
+`,
 		Patterns: []string{
-			"vm config avddir [value]",
+			"vm config android-avddir [value]",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.AVDDir
+				r.Response = ns.vmConfig.AndroidAVDDir
 				return nil
 			}
 
-			ns.vmConfig.AVDDir = c.StringArgs["value"]
+			ns.vmConfig.AndroidAVDDir = c.StringArgs["value"]
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures no-window",
-		HelpLong:  ``,
+		HelpShort: "configures android-no-window",
+		HelpLong: `Launch Android VMs without creating a local emulator window.
+
+Default: true
+`,
 		Patterns: []string{
-			"vm config no-window [true,false]",
+			"vm config android-no-window [true,false]",
 		},
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.NoWindow)
+				r.Response = strconv.FormatBool(ns.vmConfig.AndroidNoWindow)
 				return nil
 			}
 
-			ns.vmConfig.NoWindow = c.BoolArgs["true"]
+			ns.vmConfig.AndroidNoWindow = c.BoolArgs["true"]
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures console-base-port",
-		HelpLong:  ``,
+		HelpShort: "configures android-console-base-port",
+		HelpLong: `Configure the base console port for Android emulator instances.
+
+Default: 0
+`,
 		Patterns: []string{
-			"vm config console-base-port [value]",
+			"vm config android-console-base-port [value]",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.StringArgs) == 0 {
-				r.Response = strconv.FormatUint(ns.vmConfig.ConsoleBasePort, 10)
+				r.Response = strconv.FormatUint(ns.vmConfig.AndroidConsoleBasePort, 10)
 				return nil
 			}
 
@@ -145,63 +169,70 @@ var vmconfigerCLIHandlers = []minicli.Handler{
 				return err
 			}
 
-			ns.vmConfig.ConsoleBasePort = i
+			ns.vmConfig.AndroidConsoleBasePort = i
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures extra-args",
-		HelpLong:  ``,
+		HelpShort: "configures android-extra-args",
+		HelpLong: `Additional raw arguments to append to the Android emulator command line.
+`,
 		Patterns: []string{
-			"vm config extra-args [value]...",
+			"vm config android-extra-args [value]...",
 		},
 
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.ListArgs) == 0 {
-				if len(ns.vmConfig.ExtraArgs) == 0 {
+				if len(ns.vmConfig.AndroidExtraArgs) == 0 {
 					return nil
 				}
 
-				r.Response = fmt.Sprintf("%v", ns.vmConfig.ExtraArgs)
+				r.Response = fmt.Sprintf("%v", ns.vmConfig.AndroidExtraArgs)
 				return nil
 			}
 
-			ns.vmConfig.ExtraArgs = c.ListArgs["value"]
+			ns.vmConfig.AndroidExtraArgs = c.ListArgs["value"]
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures require-kvm",
-		HelpLong:  ``,
+		HelpShort: "configures android-require-kvm",
+		HelpLong: `Require KVM support for Android runtime validation and launch.
+
+Default: true
+`,
 		Patterns: []string{
-			"vm config require-kvm [true,false]",
+			"vm config android-require-kvm [true,false]",
 		},
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.RequireKVM)
+				r.Response = strconv.FormatBool(ns.vmConfig.AndroidRequireKVM)
 				return nil
 			}
 
-			ns.vmConfig.RequireKVM = c.BoolArgs["true"]
+			ns.vmConfig.AndroidRequireKVM = c.BoolArgs["true"]
 
 			return nil
 		}),
 	},
 	{
-		HelpShort: "configures writable-system",
-		HelpLong:  ``,
+		HelpShort: "configures android-writable-system",
+		HelpLong: `Request writable system behavior for the Android emulator runtime.
+
+Default: false
+`,
 		Patterns: []string{
-			"vm config writable-system [true,false]",
+			"vm config android-writable-system [true,false]",
 		},
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.WritableSystem)
+				r.Response = strconv.FormatBool(ns.vmConfig.AndroidWritableSystem)
 				return nil
 			}
 
-			ns.vmConfig.WritableSystem = c.BoolArgs["true"]
+			ns.vmConfig.AndroidWritableSystem = c.BoolArgs["true"]
 
 			return nil
 		}),
@@ -1131,9 +1162,16 @@ Default: empty map
 		HelpShort: "reset one or more configurations to default value",
 		Patterns: []string{
 			"clear vm config",
-			"clear vm config <adb,>",
-			"clear vm config <avddir,>",
-			"clear vm config <avdname,>",
+			"clear vm config <android-adb,>",
+			"clear vm config <android-avd,>",
+			"clear vm config <android-avddir,>",
+			"clear vm config <android-console-base-port,>",
+			"clear vm config <android-emulator,>",
+			"clear vm config <android-extra-args,>",
+			"clear vm config <android-no-window,>",
+			"clear vm config <android-require-kvm,>",
+			"clear vm config <android-sdk,>",
+			"clear vm config <android-writable-system,>",
 			"clear vm config <append,>",
 			"clear vm config <backchannel,>",
 			"clear vm config <bidirectional-copy-paste,>",
@@ -1141,12 +1179,9 @@ Default: empty map
 			"clear vm config <cpu,>",
 			"clear vm config <cdrom,>",
 			"clear vm config <colocate,>",
-			"clear vm config <console-base-port,>",
 			"clear vm config <cores,>",
 			"clear vm config <coschedule,>",
 			"clear vm config <disks,>",
-			"clear vm config <emulator,>",
-			"clear vm config <extra-args,>",
 			"clear vm config <fifos,>",
 			"clear vm config <filesystem,>",
 			"clear vm config <hostname,>",
@@ -1157,13 +1192,10 @@ Default: empty map
 			"clear vm config <memory,>",
 			"clear vm config <migrate,>",
 			"clear vm config <networks,>",
-			"clear vm config <no-window,>",
 			"clear vm config <preinit,>",
 			"clear vm config <qemu-append,>",
 			"clear vm config <qemu-override,>",
 			"clear vm config <qemu,>",
-			"clear vm config <require-kvm,>",
-			"clear vm config <sdk,>",
 			"clear vm config <schedule,>",
 			"clear vm config <serial-ports,>",
 			"clear vm config <snapshot,>",
@@ -1177,7 +1209,6 @@ Default: empty map
 			"clear vm config <vga,>",
 			"clear vm config <virtio-ports,>",
 			"clear vm config <volume,>",
-			"clear vm config <writable-system,>",
 		},
 		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
 			// at most one key will be set in BoolArgs but we don't know what it
@@ -1196,103 +1227,103 @@ Default: empty map
 }
 
 func (v *AndroidConfig) Info(field string) (string, error) {
-	if field == "sdk" {
-		return v.SDKPath, nil
+	if field == "android-sdk" {
+		return v.AndroidSDKPath, nil
 	}
-	if field == "emulator" {
-		return v.EmulatorPath, nil
+	if field == "android-emulator" {
+		return v.AndroidEmulatorPath, nil
 	}
-	if field == "adb" {
-		return v.ADBPath, nil
+	if field == "android-adb" {
+		return v.AndroidADBPath, nil
 	}
-	if field == "avdname" {
-		return v.AVDName, nil
+	if field == "android-avd" {
+		return v.AndroidAVD, nil
 	}
-	if field == "avddir" {
-		return v.AVDDir, nil
+	if field == "android-avddir" {
+		return v.AndroidAVDDir, nil
 	}
-	if field == "no-window" {
-		return strconv.FormatBool(v.NoWindow), nil
+	if field == "android-no-window" {
+		return strconv.FormatBool(v.AndroidNoWindow), nil
 	}
-	if field == "console-base-port" {
-		return strconv.FormatUint(v.ConsoleBasePort, 10), nil
+	if field == "android-console-base-port" {
+		return strconv.FormatUint(v.AndroidConsoleBasePort, 10), nil
 	}
-	if field == "extra-args" {
-		return fmt.Sprintf("%v", v.ExtraArgs), nil
+	if field == "android-extra-args" {
+		return fmt.Sprintf("%v", v.AndroidExtraArgs), nil
 	}
-	if field == "require-kvm" {
-		return strconv.FormatBool(v.RequireKVM), nil
+	if field == "android-require-kvm" {
+		return strconv.FormatBool(v.AndroidRequireKVM), nil
 	}
-	if field == "writable-system" {
-		return strconv.FormatBool(v.WritableSystem), nil
+	if field == "android-writable-system" {
+		return strconv.FormatBool(v.AndroidWritableSystem), nil
 	}
 
 	return "", fmt.Errorf("invalid info field: %v", field)
 }
 
 func (v *AndroidConfig) Clear(mask string) {
-	if mask == Wildcard || mask == "sdk" {
-		v.SDKPath = ""
+	if mask == Wildcard || mask == "android-sdk" {
+		v.AndroidSDKPath = ""
 	}
-	if mask == Wildcard || mask == "emulator" {
-		v.EmulatorPath = ""
+	if mask == Wildcard || mask == "android-emulator" {
+		v.AndroidEmulatorPath = ""
 	}
-	if mask == Wildcard || mask == "adb" {
-		v.ADBPath = ""
+	if mask == Wildcard || mask == "android-adb" {
+		v.AndroidADBPath = ""
 	}
-	if mask == Wildcard || mask == "avdname" {
-		v.AVDName = ""
+	if mask == Wildcard || mask == "android-avd" {
+		v.AndroidAVD = ""
 	}
-	if mask == Wildcard || mask == "avddir" {
-		v.AVDDir = ""
+	if mask == Wildcard || mask == "android-avddir" {
+		v.AndroidAVDDir = ""
 	}
-	if mask == Wildcard || mask == "no-window" {
-		v.NoWindow = false
+	if mask == Wildcard || mask == "android-no-window" {
+		v.AndroidNoWindow = true
 	}
-	if mask == Wildcard || mask == "console-base-port" {
-		v.ConsoleBasePort = 0
+	if mask == Wildcard || mask == "android-console-base-port" {
+		v.AndroidConsoleBasePort = 0
 	}
-	if mask == Wildcard || mask == "extra-args" {
-		v.ExtraArgs = nil
+	if mask == Wildcard || mask == "android-extra-args" {
+		v.AndroidExtraArgs = nil
 	}
-	if mask == Wildcard || mask == "require-kvm" {
-		v.RequireKVM = false
+	if mask == Wildcard || mask == "android-require-kvm" {
+		v.AndroidRequireKVM = true
 	}
-	if mask == Wildcard || mask == "writable-system" {
-		v.WritableSystem = false
+	if mask == Wildcard || mask == "android-writable-system" {
+		v.AndroidWritableSystem = false
 	}
 }
 
 func (v *AndroidConfig) WriteConfig(w io.Writer) error {
-	if v.SDKPath != "" {
-		fmt.Fprintf(w, "vm config sdk %v\n", v.SDKPath)
+	if v.AndroidSDKPath != "" {
+		fmt.Fprintf(w, "vm config android-sdk %v\n", v.AndroidSDKPath)
 	}
-	if v.EmulatorPath != "" {
-		fmt.Fprintf(w, "vm config emulator %v\n", v.EmulatorPath)
+	if v.AndroidEmulatorPath != "" {
+		fmt.Fprintf(w, "vm config android-emulator %v\n", v.AndroidEmulatorPath)
 	}
-	if v.ADBPath != "" {
-		fmt.Fprintf(w, "vm config adb %v\n", v.ADBPath)
+	if v.AndroidADBPath != "" {
+		fmt.Fprintf(w, "vm config android-adb %v\n", v.AndroidADBPath)
 	}
-	if v.AVDName != "" {
-		fmt.Fprintf(w, "vm config avdname %v\n", v.AVDName)
+	if v.AndroidAVD != "" {
+		fmt.Fprintf(w, "vm config android-avd %v\n", v.AndroidAVD)
 	}
-	if v.AVDDir != "" {
-		fmt.Fprintf(w, "vm config avddir %v\n", v.AVDDir)
+	if v.AndroidAVDDir != "" {
+		fmt.Fprintf(w, "vm config android-avddir %v\n", v.AndroidAVDDir)
 	}
-	if v.NoWindow != false {
-		fmt.Fprintf(w, "vm config no-window %t\n", v.NoWindow)
+	if v.AndroidNoWindow != true {
+		fmt.Fprintf(w, "vm config android-no-window %t\n", v.AndroidNoWindow)
 	}
-	if v.ConsoleBasePort != 0 {
-		fmt.Fprintf(w, "vm config console-base-port %v\n", v.ConsoleBasePort)
+	if v.AndroidConsoleBasePort != 0 {
+		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.AndroidConsoleBasePort)
 	}
-	if len(v.ExtraArgs) > 0 {
-		fmt.Fprintf(w, "vm config extra-args %v\n", quoteJoin(v.ExtraArgs, " "))
+	if len(v.AndroidExtraArgs) > 0 {
+		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.AndroidExtraArgs, " "))
 	}
-	if v.RequireKVM != false {
-		fmt.Fprintf(w, "vm config require-kvm %t\n", v.RequireKVM)
+	if v.AndroidRequireKVM != true {
+		fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.AndroidRequireKVM)
 	}
-	if v.WritableSystem != false {
-		fmt.Fprintf(w, "vm config writable-system %t\n", v.WritableSystem)
+	if v.AndroidWritableSystem != false {
+		fmt.Fprintf(w, "vm config android-writable-system %t\n", v.AndroidWritableSystem)
 	}
 
 	return nil
@@ -1312,26 +1343,26 @@ func (v *AndroidConfig) ReadConfig(r io.Reader, ns string) error {
 		field := config[0]
 
 		switch field {
-		case "sdk":
-			v.SDKPath = config[1]
-		case "emulator":
-			v.EmulatorPath = config[1]
-		case "adb":
-			v.ADBPath = config[1]
-		case "avdname":
-			v.AVDName = config[1]
-		case "avddir":
-			v.AVDDir = config[1]
-		case "no-window":
-			v.NoWindow, _ = strconv.ParseBool(config[1])
-		case "console-base-port":
-			v.ConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
-		case "extra-args":
-			v.ExtraArgs = strings.Fields(config[1])
-		case "require-kvm":
-			v.RequireKVM, _ = strconv.ParseBool(config[1])
-		case "writable-system":
-			v.WritableSystem, _ = strconv.ParseBool(config[1])
+		case "android-sdk":
+			v.AndroidSDKPath = config[1]
+		case "android-emulator":
+			v.AndroidEmulatorPath = config[1]
+		case "android-adb":
+			v.AndroidADBPath = config[1]
+		case "android-avd":
+			v.AndroidAVD = config[1]
+		case "android-avddir":
+			v.AndroidAVDDir = config[1]
+		case "android-no-window":
+			v.AndroidNoWindow, _ = strconv.ParseBool(config[1])
+		case "android-console-base-port":
+			v.AndroidConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
+		case "android-extra-args":
+			v.AndroidExtraArgs = strings.Fields(config[1])
+		case "android-require-kvm":
+			v.AndroidRequireKVM, _ = strconv.ParseBool(config[1])
+		case "android-writable-system":
+			v.AndroidWritableSystem, _ = strconv.ParseBool(config[1])
 		}
 	}
 
