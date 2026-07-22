@@ -47,7 +47,7 @@ type AndroidConfig struct {
 	// Configure the base console port for Android emulator instances.
 	//
 	// Default: 0
-	ConsoleBasePort uint64 `config:"android-console-base-port"`
+	ConsoleBasePort uint64 `config:"android-console-base-port" validate:"validAndroidConsoleBasePort"`
 
 	// Additional raw arguments to append to the Android emulator command line.
 	ExtraArgs []string `config:"android-extra-args"`
@@ -129,16 +129,20 @@ func findADB(path string) (string, error) {
 	return exec.LookPath("adb")
 }
 
-func validateAndroidConfig(cfg AndroidConfig) error {
-	if cfg.ConsoleBasePort > 0 && cfg.ConsoleBasePort < 1024 {
+func validateAndroidConsoleBasePort(port uint64) error {
+	if port > 0 && port < 1024 {
 		return fmt.Errorf("android-console-base-port must be >= 1024")
 	}
 
-	if cfg.ConsoleBasePort > 0 && cfg.ConsoleBasePort%2 != 0 {
+	if port > 0 && port%2 != 0 {
 		return fmt.Errorf("android-console-base-port must be even")
 	}
 
 	return nil
+}
+
+func validateAndroidConfig(cfg AndroidConfig) error {
+	return validateAndroidConsoleBasePort(cfg.ConsoleBasePort)
 }
 
 func androidAVDExists(cfg AndroidConfig) error {
