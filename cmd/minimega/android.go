@@ -151,6 +151,12 @@ func (vm *AndroidVM) Flush() error {
 	defer vm.lock.Unlock()
 
 	for _, net := range vm.Networks {
+		// Android networking is currently unsupported, so Android VMs may have
+		// configured networks without created taps. Nothing to clean up.
+		if net.Tap == "" {
+			continue
+		}
+
 		// Handle already disconnected taps differently since they are not
 		// assigned to any bridges.
 		if net.VLAN == DisconnectedVLAN {
@@ -617,82 +623,4 @@ func tcpPortAvailable(port int) bool {
 
 	l.Close()
 	return true
-}
-
-func (vm *AndroidVM) createTapName(bridge string) (string, error) {
-	br, err := getBridge(bridge)
-	if err != nil {
-		return "", vm.setErrorf("unable to get bridge %v: %v", bridge, err)
-	}
-
-	return br.CreateTapName(), nil
-}
-
-func (vm *AndroidVM) addTap(name, bridge, mac string, vlan int, qinq bool) (string, error) {
-	br, err := getBridge(bridge)
-	if err != nil {
-		return name, vm.setErrorf("unable to get bridge %v: %v", bridge, err)
-	}
-
-	tap, err := br.CreateTap(name, mac, vlan)
-	if err != nil {
-		return tap, err
-	}
-
-	if qinq {
-		if err := br.SetTapQinQ(tap, vlan); err != nil {
-			return tap, err
-		}
-	}
-
-	return tap, nil
-}
-
-func (vm *AndroidVM) createTaps() error {
-	for i := range vm.Networks {
-		nic := &vm.Networks[i]
-		if nic.Tap != "" {
-			continue
-		}
-
-		tap, err := vm.addTap("", nic.Bridge, nic.MAC, nic.VLAN, nic.QinQ)
-		if err != nil {
-			return vm.setErrorf("unable to create android tap %v: %v", i, err)
-		}
-
-		nic.Tap = tap
-	}
-
-	if len(vm.Networks) > 0 {
-		if err := vm.writeTaps(); err != nil {
-			return vm.setErrorf("unable to write android taps: %v", err)
-		}
-	}
-
-	return nil
-}
-
-func (vm *AndroidVM) createBonds() error {
-	for i := range vm.Bonds {
-		bond := &vm.Bonds[i]
-
-		if bond.created {
-			// Bond has already been created, don't need to do it again.
-			continue
-		}
-
-		if err := vm.addBond(bond); err != nil {
-			return vm.setErrorf("unable to create android bond %v: %v", i, err)
-		}
-
-		bond.created = true
-	}
-
-	if len(vm.Bonds) > 0 {
-		if err := vm.writeBonds(); err != nil {
-			return vm.setErrorf("unable to write android bonds: %v", err)
-		}
-	}
-
-	return nil
 }
