@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -100,10 +101,14 @@ func androidConfiguredAny() bool {
 
 func findAndroidEmulator(path string) (string, error) {
 	if path != "" {
-		if _, err := os.Stat(path); err != nil {
-			return "", err
+		if filepath.IsAbs(path) || strings.Contains(path, string(os.PathSeparator)) {
+			if _, err := os.Stat(path); err != nil {
+				return "", err
+			}
+			return path, nil
 		}
-		return path, nil
+
+		return exec.LookPath(path)
 	}
 
 	return exec.LookPath("emulator")
@@ -111,10 +116,14 @@ func findAndroidEmulator(path string) (string, error) {
 
 func findADB(path string) (string, error) {
 	if path != "" {
-		if _, err := os.Stat(path); err != nil {
-			return "", err
+		if filepath.IsAbs(path) || strings.Contains(path, string(os.PathSeparator)) {
+			if _, err := os.Stat(path); err != nil {
+				return "", err
+			}
+			return path, nil
 		}
-		return path, nil
+
+		return exec.LookPath(path)
 	}
 
 	return exec.LookPath("adb")
@@ -123,6 +132,10 @@ func findADB(path string) (string, error) {
 func validateAndroidConfig(cfg AndroidConfig) error {
 	if cfg.ConsoleBasePort > 0 && cfg.ConsoleBasePort < 1024 {
 		return fmt.Errorf("android-console-base-port must be >= 1024")
+	}
+
+	if cfg.ConsoleBasePort > 0 && cfg.ConsoleBasePort%2 != 0 {
+		return fmt.Errorf("android-console-base-port must be even")
 	}
 
 	return nil
