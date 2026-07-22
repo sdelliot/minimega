@@ -321,7 +321,7 @@ func (v *{{ $type }} ) ReadConfig(r io.Reader, ns string) error {
 			{{- else if eq .Type "uint64" }}
 			v.{{ .Field }}, _ = strconv.ParseUint(config[1], 10, 64)
 			{{- else if eq .Type "slice" }}
-			v.{{ .Field }} = strings.Fields(config[1])
+			v.{{ .Field }} = fieldsQuoteEscape("\"", strings.Join(config[1:], " "))
 			{{- else }}
 			v.ReadFieldConfig(strings.NewReader(line), "{{ .ConfigName }}", ns)
 			{{- end }}

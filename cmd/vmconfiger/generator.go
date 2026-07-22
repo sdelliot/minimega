@@ -171,13 +171,21 @@ func (g *Generator) handleNode(node ast.Node) bool {
 				tag = reflect.StructTag(v)
 			}
 
-			configName := name
-			if strings.Contains(name, "Path") {
-				// trim both path and paths, should only contain one
-				configName = strings.TrimSuffix(configName, "Path")
-				configName = strings.TrimSuffix(configName, "Paths")
+			configName := tag.Get("config")
+			if configName == "" {
+				configName = name
+				if strings.Contains(name, "Path") {
+					// trim both path and paths, should only contain one
+					configName = strings.TrimSuffix(configName, "Path")
+					configName = strings.TrimSuffix(configName, "Paths")
+				}
+				configName = camelToHyphenated(configName)
 			}
-			configName = camelToHyphenated(configName)
+
+			pathCheck := strings.Contains(name, "Path")
+			if tag.Get("path") == "false" {
+				pathCheck = false
+			}
 
 			switch typ := field.Type.(type) {
 			case *ast.Ident:
@@ -222,7 +230,7 @@ func (g *Generator) handleNode(node ast.Node) bool {
 					Suggest:    tag.Get("suggest"),
 					Doc:        doc,
 					Signed:     signed,
-					Path:       strings.Contains(name, "Path"),
+					Path:       pathCheck,
 				}
 
 				log.Info("field: %#v", f)
@@ -244,6 +252,7 @@ func (g *Generator) handleNode(node ast.Node) bool {
 						Validate:   tag.Get("validate"),
 						Suggest:    tag.Get("suggest"),
 						Doc:        doc,
+						Path:       pathCheck,
 					})
 
 					continue
@@ -267,7 +276,7 @@ func (g *Generator) handleNode(node ast.Node) bool {
 					Validate:   tag.Get("validate"),
 					Suggest:    tag.Get("suggest"),
 					Doc:        doc,
-					Path:       strings.Contains(name, "Path"),
+					Path:       pathCheck,
 				}
 
 				g.fields[strctName] = append(g.fields[strctName], f)
@@ -286,6 +295,7 @@ func (g *Generator) handleNode(node ast.Node) bool {
 						Validate:   tag.Get("validate"),
 						Suggest:    tag.Get("suggest"),
 						Doc:        doc,
+						Path:       pathCheck,
 					})
 
 					continue
@@ -311,7 +321,7 @@ func (g *Generator) handleNode(node ast.Node) bool {
 					Validate:   tag.Get("validate"),
 					Suggest:    tag.Get("suggest"),
 					Doc:        doc,
-					Path:       strings.Contains(name, "Path"),
+					Path:       pathCheck,
 				}
 
 				g.fields[strctName] = append(g.fields[strctName], f)
