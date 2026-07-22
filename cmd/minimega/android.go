@@ -118,10 +118,6 @@ func (vm *AndroidVM) Start() error {
 
 	log.Info("starting android VM: %v", vm.ID)
 
-	if vm.q == nil {
-		return vm.setErrorf("unable to start android VM: QMP is not connected")
-	}
-
 	if err := vm.q.Start(); err != nil {
 		return vm.setErrorf("unable to start android VM: %v", err)
 	}
@@ -137,10 +133,6 @@ func (vm *AndroidVM) Stop() error {
 
 	if vm.State != VM_RUNNING {
 		return vmNotRunning(strconv.Itoa(vm.ID))
-	}
-
-	if vm.q == nil {
-		return vm.setErrorf("unable to stop android VM: QMP is not connected")
 	}
 
 	log.Info("stopping android VM: %v", vm.ID)
