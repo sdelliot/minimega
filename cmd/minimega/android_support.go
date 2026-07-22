@@ -129,7 +129,7 @@ func findADB(path string) (string, error) {
 	return exec.LookPath("adb")
 }
 
-func validateAndroidConsoleBasePort(port uint64) error {
+func validateAndroidConsoleBasePortValue(port uint64) error {
 	if port > 0 && port < 1024 {
 		return fmt.Errorf("android-console-base-port must be >= 1024")
 	}
@@ -141,8 +141,12 @@ func validateAndroidConsoleBasePort(port uint64) error {
 	return nil
 }
 
+func validateAndroidConsoleBasePort(_ VMConfig, port uint64) error {
+	return validateAndroidConsoleBasePortValue(port)
+}
+
 func validateAndroidConfig(cfg AndroidConfig) error {
-	return validateAndroidConsoleBasePort(cfg.ConsoleBasePort)
+	return validateAndroidConsoleBasePortValue(cfg.ConsoleBasePort)
 }
 
 func androidAVDExists(cfg AndroidConfig) error {
