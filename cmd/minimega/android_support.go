@@ -1,15 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"text/tabwriter"
 )
 
@@ -91,145 +87,6 @@ func (vm *AndroidConfig) String() string {
 	w.Flush()
 	fmt.Fprintln(&o)
 	return o.String()
-}
-
-func (v *AndroidConfig) Info(field string) (string, error) {
-	switch field {
-	case "android-sdk":
-		return v.AndroidSDKPath, nil
-	case "android-emulator":
-		return v.AndroidEmulatorPath, nil
-	case "android-adb":
-		return v.AndroidADBPath, nil
-	case "android-avd":
-		return v.AndroidAVD, nil
-	case "android-avd-dir":
-		return v.AndroidAVDDir, nil
-	case "android-no-window":
-		return strconv.FormatBool(v.AndroidNoWindow), nil
-	case "android-console-base-port":
-		return strconv.FormatUint(v.AndroidConsoleBasePort, 10), nil
-	case "android-extra-args":
-		return fmt.Sprintf("%v", v.AndroidExtraArgs), nil
-	case "android-require-kvm":
-		return strconv.FormatBool(v.AndroidRequireKVM), nil
-	case "android-writable-system":
-		return strconv.FormatBool(v.AndroidWritableSystem), nil
-	}
-
-	return "", fmt.Errorf("invalid info field: %v", field)
-}
-
-func (v *AndroidConfig) Clear(mask string) {
-	if mask == Wildcard || mask == "android-sdk" {
-		v.AndroidSDKPath = ""
-	}
-	if mask == Wildcard || mask == "android-emulator" {
-		v.AndroidEmulatorPath = ""
-	}
-	if mask == Wildcard || mask == "android-adb" {
-		v.AndroidADBPath = ""
-	}
-	if mask == Wildcard || mask == "android-avd" {
-		v.AndroidAVD = ""
-	}
-	if mask == Wildcard || mask == "android-avd-dir" {
-		v.AndroidAVDDir = ""
-	}
-	if mask == Wildcard || mask == "android-no-window" {
-		v.AndroidNoWindow = true
-	}
-	if mask == Wildcard || mask == "android-console-base-port" {
-		v.AndroidConsoleBasePort = 0
-	}
-	if mask == Wildcard || mask == "android-extra-args" {
-		v.AndroidExtraArgs = nil
-	}
-	if mask == Wildcard || mask == "android-require-kvm" {
-		v.AndroidRequireKVM = true
-	}
-	if mask == Wildcard || mask == "android-writable-system" {
-		v.AndroidWritableSystem = false
-	}
-}
-
-func (v *AndroidConfig) WriteConfig(w io.Writer) error {
-	if v.AndroidSDKPath != "" {
-		fmt.Fprintf(w, "vm config android-sdk %v\n", v.AndroidSDKPath)
-	}
-	if v.AndroidEmulatorPath != "" {
-		fmt.Fprintf(w, "vm config android-emulator %v\n", v.AndroidEmulatorPath)
-	}
-	if v.AndroidADBPath != "" {
-		fmt.Fprintf(w, "vm config android-adb %v\n", v.AndroidADBPath)
-	}
-	if v.AndroidAVD != "" {
-		fmt.Fprintf(w, "vm config android-avd %v\n", v.AndroidAVD)
-	}
-	if v.AndroidAVDDir != "" {
-		fmt.Fprintf(w, "vm config android-avd-dir %v\n", v.AndroidAVDDir)
-	}
-	if v.AndroidNoWindow != true {
-		fmt.Fprintf(w, "vm config android-no-window %t\n", v.AndroidNoWindow)
-	}
-	if v.AndroidConsoleBasePort != 0 {
-		fmt.Fprintf(w, "vm config android-console-base-port %v\n", v.AndroidConsoleBasePort)
-	}
-	if len(v.AndroidExtraArgs) > 0 {
-		fmt.Fprintf(w, "vm config android-extra-args %v\n", quoteJoin(v.AndroidExtraArgs, " "))
-	}
-	if v.AndroidRequireKVM != true {
-		fmt.Fprintf(w, "vm config android-require-kvm %t\n", v.AndroidRequireKVM)
-	}
-	if v.AndroidWritableSystem != false {
-		fmt.Fprintf(w, "vm config android-writable-system %t\n", v.AndroidWritableSystem)
-	}
-
-	return nil
-}
-
-func (v *AndroidConfig) ReadConfig(r io.Reader, ns string) error {
-	scanner := bufio.NewScanner(r)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		if !strings.HasPrefix(line, "vm config") {
-			continue
-		}
-
-		config := strings.Fields(line)[2:]
-		if len(config) < 2 {
-			continue
-		}
-
-		field := config[0]
-
-		switch field {
-		case "android-sdk":
-			v.AndroidSDKPath = config[1]
-		case "android-emulator":
-			v.AndroidEmulatorPath = config[1]
-		case "android-adb":
-			v.AndroidADBPath = config[1]
-		case "android-avd":
-			v.AndroidAVD = config[1]
-		case "android-avd-dir":
-			v.AndroidAVDDir = config[1]
-		case "android-no-window":
-			v.AndroidNoWindow, _ = strconv.ParseBool(config[1])
-		case "android-console-base-port":
-			v.AndroidConsoleBasePort, _ = strconv.ParseUint(config[1], 10, 64)
-		case "android-extra-args":
-			v.AndroidExtraArgs = fieldsQuoteEscape("\"", strings.Join(config[1:], " "))
-		case "android-require-kvm":
-			v.AndroidRequireKVM, _ = strconv.ParseBool(config[1])
-		case "android-writable-system":
-			v.AndroidWritableSystem, _ = strconv.ParseBool(config[1])
-		}
-	}
-
-	return scanner.Err()
 }
 
 func androidConfiguredAny() bool {
