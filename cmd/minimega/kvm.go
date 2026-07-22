@@ -84,7 +84,7 @@ type KVMConfig struct {
 	// Use 'vm save' to generate state images from running VMs.
 	//
 	// Note: this configuration only applies to KVM-based VMs.
-	MigratePath string
+	MigratePath string `config:"state" alias:"migrate"`
 
 	// Set the virtual CPU architecture.
 	//
