@@ -163,6 +163,10 @@ Default: 0
 				return err
 			}
 
+			if err := validateAndroidConsoleBasePort(ns.vmConfig, i); err != nil {
+				return err
+			}
+
 			ns.vmConfig.ConsoleBasePort = i
 
 			return nil
