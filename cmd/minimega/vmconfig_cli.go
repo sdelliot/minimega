@@ -43,7 +43,23 @@ configured with a static MAC, the VM config will not be launchable. Clone also
 clears the UUID.
 
 Calling clear vm config will clear all VM configuration options, but will not
-remove saved configurations.`,
+remove saved configurations.
+
+Android-related generated config fields use the following names:
+
+	android-sdk
+	android-emulator
+	android-adb
+	android-avd
+	android-avd-dir
+	android-no-window
+	android-console-base-port
+	android-extra-args
+	android-require-kvm
+	android-writable-system
+
+These refer to host-side Android emulator runtime settings, not files served
+from the minimega files directory.`,
 		Patterns: []string{
 			"vm config",
 			"vm config <save,> <name>",
@@ -238,246 +254,6 @@ Note: this configuration only applies to KVM-based VMs.`,
 			"vm config qemu-override <match> <replacement>",
 		},
 		Call: wrapSimpleCLI(cliVMConfigQemuOverride),
-	},
-	{ // vm config android-sdk
-		HelpShort: "configure android sdk root path",
-		HelpLong: `
-Configure the host-side Android SDK root directory.
-
-This path is used for Android emulator support and refers to a path on the host
-running minimega. Unlike VM disk or kernel paths, this is not treated as a file
-served from the minimega files directory.
-
-This setting is optional if the emulator and adb paths are configured directly,
-but may be useful for site-specific tooling and future Android runtime helpers.`,
-		Patterns: []string{
-			"vm config android-sdk [value]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.SDKPath
-				return nil
-			}
-			ns.vmConfig.SDKPath = c.StringArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-emulator
-		HelpShort: "configure android emulator binary path",
-		HelpLong: `
-Configure the host-side Android emulator binary to use for Android VM support.
-
-This value may be:
-- an absolute path to the emulator binary, or
-- a binary name resolvable via the host PATH
-
-This path is interpreted on the minimega host and is not served from the
-minimega files directory.`,
-		Patterns: []string{
-			"vm config android-emulator [value]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.EmulatorPath
-				return nil
-			}
-			ns.vmConfig.EmulatorPath = c.StringArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-adb
-		HelpShort: "configure android adb binary path",
-		HelpLong: `
-Configure the host-side adb binary to use for Android VM support.
-
-This value may be:
-- an absolute path to the adb binary, or
-- a binary name resolvable via the host PATH
-
-This path is interpreted on the minimega host and is not served from the
-minimega files directory.`,
-		Patterns: []string{
-			"vm config android-adb [value]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.ADBPath
-				return nil
-			}
-			ns.vmConfig.ADBPath = c.StringArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-avd
-		HelpShort: "configure android avd name",
-		HelpLong: `
-Configure the Android Virtual Device (AVD) name to use when launching an
-Android VM.
-
-This is the logical AVD name known to the Android emulator, for example:
-
-	vm config android-avd Pixel_9a
-
-If android-avd-dir is also configured, minimega can validate that the expected
-host-side AVD directory exists.`,
-		Patterns: []string{
-			"vm config android-avd [value]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.AVDName
-				return nil
-			}
-			ns.vmConfig.AVDName = c.StringArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-avd-dir
-		HelpShort: "configure android avd directory",
-		HelpLong: `
-Configure the host-side directory containing Android AVD data.
-
-This should be the base directory that contains entries such as:
-
-	<avd-dir>/<avd-name>.avd
-
-This path is interpreted on the minimega host and is not served from the
-minimega files directory.`,
-		Patterns: []string{
-			"vm config android-avd-dir [value]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = ns.vmConfig.AVDDir
-				return nil
-			}
-			ns.vmConfig.AVDDir = c.StringArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-no-window
-		HelpShort: "configure headless Android emulator mode",
-		HelpLong: `
-Configure whether Android VMs should be launched without a local emulator
-window.
-
-This is intended for headless or cluster-based execution environments and is
-typically enabled by default.
-
-Set to false only when a visible emulator window is desired and the host
-environment supports it.`,
-		Patterns: []string{
-			"vm config android-no-window [true,false]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.NoWindow)
-				return nil
-			}
-			ns.vmConfig.NoWindow = c.BoolArgs["true"]
-			return nil
-		}),
-	},
-	{ // vm config android-console-base-port
-		HelpShort: "configure Android emulator console base port",
-		HelpLong: `
-Configure the base console port for Android emulator instances.
-
-The Android emulator uses a paired console/adb port scheme. This setting allows
-a deterministic starting point for port allocation.
-
-If unset or set to zero, a future Android runtime implementation may allocate
-ports automatically.`,
-		Patterns: []string{
-			"vm config android-console-base-port [value]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.StringArgs) == 0 {
-				r.Response = strconv.FormatUint(ns.vmConfig.ConsoleBasePort, 10)
-				return nil
-			}
-			v, err := strconv.ParseUint(c.StringArgs["value"], 10, 64)
-			if err != nil {
-				return err
-			}
-			ns.vmConfig.ConsoleBasePort = v
-			return nil
-		}),
-	},
-	{ // vm config android-extra-args
-		HelpShort: "configure additional Android emulator arguments",
-		HelpLong: `
-Configure additional raw arguments to be appended to the Android emulator
-command line.
-
-These values are host-side emulator arguments and should be specified exactly
-as they should be passed to the emulator.
-
-Examples:
-
-	vm config android-extra-args -gpu off
-	vm config android-extra-args "-prop foo=bar baz"
-
-Quoted arguments are preserved during config save/restore as much as possible.`,
-		Patterns: []string{
-			"vm config android-extra-args [value]...",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.ListArgs) == 0 {
-				if len(ns.vmConfig.ExtraArgs) == 0 {
-					return nil
-				}
-				r.Response = fmt.Sprintf("%v", ns.vmConfig.ExtraArgs)
-				return nil
-			}
-			ns.vmConfig.ExtraArgs = c.ListArgs["value"]
-			return nil
-		}),
-	},
-	{ // vm config android-require-kvm
-		HelpShort: "configure whether Android runtime requires KVM",
-		HelpLong: `
-Configure whether Android VM support should require KVM acceleration to be
-present on the host.
-
-When enabled, Android runtime validation will fail if the host does not appear
-to have the KVM kernel module loaded.
-
-This is a host/runtime validation control and does not by itself indicate that
-Android support is configured for a VM.`,
-		Patterns: []string{
-			"vm config android-require-kvm [true,false]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.RequireKVM)
-				return nil
-			}
-			ns.vmConfig.RequireKVM = c.BoolArgs["true"]
-			return nil
-		}),
-	},
-	{ // vm config android-writable-system
-		HelpShort: "configure writable system behavior for Android emulator",
-		HelpLong: `
-Configure whether the Android emulator should request writable system behavior.
-
-This setting is emulator/runtime specific and may be required for some Android
-experiments that modify the guest system image. It is disabled by default.
-
-Support for this setting depends on the Android emulator/runtime used on the
-host.`,
-		Patterns: []string{
-			"vm config android-writable-system [true,false]",
-		},
-		Call: wrapSimpleCLI(func(ns *Namespace, c *minicli.Command, r *minicli.Response) error {
-			if len(c.BoolArgs) == 0 {
-				r.Response = strconv.FormatBool(ns.vmConfig.WritableSystem)
-				return nil
-			}
-			ns.vmConfig.WritableSystem = c.BoolArgs["true"]
-			return nil
-		}),
 	},
 	{ // clear vm config tag
 		HelpShort: "remove tags for newly launched VMs",
