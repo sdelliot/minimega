@@ -294,6 +294,20 @@ func (vm *AndroidVM) WriteConfig(w io.Writer) error {
 func (vm *AndroidVM) launch() error {
 	log.Info("launching android vm: %v", vm.ID)
 
+	if vm.State == VM_BUILDING {
+		if err := os.MkdirAll(vm.instancePath, os.FileMode(0700)); err != nil {
+			return fmt.Errorf("unable to create VM dir: %v", err)
+		}
+
+		if err := vm.createInstancePathAlias(); err != nil {
+			return vm.setErrorf("createInstancePathAlias: %v", err)
+		}
+	}
+
+	mustWrite(vm.path("name"), vm.Name)
+
+	// From this point forward, vm.setErrorf() is safe because the instance
+	// directory exists and the state file can be written.
 	if err := validateAndroidLaunchConfig(vm.AndroidConfig); err != nil {
 		return vm.setErrorf("android config invalid: %v", err)
 	}
@@ -309,11 +323,13 @@ func (vm *AndroidVM) launch() error {
 		return vm.setErrorf("android adb not found: %v", err)
 	}
 
-	if vm.State == VM_BUILDING {
-		if err := os.MkdirAll(vm.instancePath, os.FileMode(0700)); err != nil {
-			return vm.setErrorf("unable to create VM dir: %v", err)
-		}
+	// Android emulator tap/network support is deferred. Avoid creating taps
+	// and then failing later with obscure /dev/net/tun errors.
+	if len(vm.Networks) > 0 || len(vm.Bonds) > 0 {
+		return vm.setErrorf("android VM networking is not supported yet")
+	}
 
+	if vm.State == VM_BUILDING {
 		// Android reuses KVMConfig/qemuArgs for backend QEMU arguments, so apply
 		// the same disk snapshot behavior as KVM VMs.
 		if vm.Snapshot {
@@ -326,19 +342,6 @@ func (vm *AndroidVM) launch() error {
 				vm.Disks[i].SnapshotPath = dst
 			}
 		}
-
-		if err := vm.createInstancePathAlias(); err != nil {
-			return vm.setErrorf("createInstancePathAlias: %v", err)
-		}
-	}
-
-	mustWrite(vm.path("name"), vm.Name)
-
-	if err := vm.createTaps(); err != nil {
-		return err
-	}
-	if err := vm.createBonds(); err != nil {
-		return err
 	}
 
 	console, adb, err := reserveAndroidPortPair(vm.ConsoleBasePort)
