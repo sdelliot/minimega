@@ -47,7 +47,7 @@ type AndroidConfig struct {
 	// Configure the base console port for Android emulator instances.
 	//
 	// Default: 0
-	ConsoleBasePort uint64 `config:"android-console-base-port" validate:"validAndroidConsoleBasePort"`
+	ConsoleBasePort uint64 `config:"android-console-base-port" validate:"validateAndroidConsoleBasePort"`
 
 	// Additional raw arguments to append to the Android emulator command line.
 	ExtraArgs []string `config:"android-extra-args"`
