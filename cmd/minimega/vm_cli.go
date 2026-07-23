@@ -262,7 +262,7 @@ connections via vm config when launching VMs. See "vm config net" for more detai
 You will need to specify the VLAN of which the interface is a member. Optionally, you may
 specify the bridge the interface will be connected on. You may also specify a MAC address for
 the interface. Finally, you may also specify the network device for qemu to use. By default,
-"e1000" is used. The order is:
+"e1000" is used for KVM and "virtio-net-pci" is used for Android VM's. The order is:
 
 	<bridge>,<VLAN>,<MAC>,<driver>
 
@@ -289,6 +289,10 @@ optional bridge:
 If the bridge name is omitted, the interface will be reconnected to the same
 bridge that it is already on. If the interface is not connected to a bridge, it
 will be connected to the default bridge, "mega_bridge".
+
+For Android VMs, vm net connect/disconnect operates on the host-side minimega
+tap attached to the Android Emulator backend NIC. It does not configure Android
+guest IP addresses, policy routing, or firewall rules.
 
 To create a bond comprised of two or more interfaces on a VM, use 'vm net bond'.
 For example, to create an 'active-backup' bond with interfaces 1 and 2 on VM foo

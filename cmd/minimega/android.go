@@ -23,6 +23,8 @@ const (
 	DefaultAndroidConsolePort = 5554
 	MaxAndroidConsolePort     = 5682
 
+	// Android Emulator's QEMU backend does not support minimega's KVM default
+	// e1000 NIC. Use virtio-net-pci for Android tap-backed NICs.
 	DefaultAndroidNetDriver = "virtio-net-pci"
 
 	AndroidQMPConnectRetry = 300
@@ -59,6 +61,10 @@ func NewAndroid(name, namespace string, config VMConfig) (*AndroidVM, error) {
 	vm.KVMConfig = config.KVMConfig.Copy()
 	vm.AndroidConfig = config.AndroidConfig.Copy()
 
+	// Normalize Android network devices to a NIC model supported by the Android
+	// Emulator backend. This preserves minimega's existing NetConfig/qemuArgs flow
+	// while avoiding the KVM default e1000 device, which Android's backend QEMU
+	// rejects.
 	for i := range vm.Networks {
 		if vm.Networks[i].Driver == "" || vm.Networks[i].Driver == DefaultKVMDriver {
 			vm.Networks[i].Driver = DefaultAndroidNetDriver
@@ -162,17 +168,16 @@ func (vm *AndroidVM) Flush() error {
 	defer vm.lock.Unlock()
 
 	for _, net := range vm.Networks {
-		// Android networking is currently unsupported, so Android VMs may have
-		// configured networks without created taps. Nothing to clean up.
+		// Android VMs can enter ERROR before taps are created. Nothing to clean
+		// up in that case.
 		if net.Tap == "" {
 			continue
 		}
 
-		// Handle already disconnected taps differently since they are not
-		// assigned to any bridges.
-		if net.VLAN == DisconnectedVLAN {
+		// Disconnected taps are no longer associated with a bridge.
+		if net.VLAN == DisconnectedVLAN || net.Bridge == "" {
 			if err := bridge.DestroyTap(net.Tap); err != nil {
-				log.Error("leaked tap %v: %v", net.Tap, err)
+				log.Error("leaked android tap %v: %v", net.Tap, err)
 			}
 
 			continue
@@ -180,11 +185,19 @@ func (vm *AndroidVM) Flush() error {
 
 		br, err := getBridge(net.Bridge)
 		if err != nil {
-			return err
+			// Be defensive during cleanup. If bridge lookup fails, still try to
+			// destroy the tap directly.
+			log.Warn("unable to get bridge %v while flushing android tap %v: %v", net.Bridge, net.Tap, err)
+
+			if err2 := bridge.DestroyTap(net.Tap); err2 != nil {
+				return fmt.Errorf("unable to clean android tap %v: bridge lookup failed: %v; direct destroy failed: %v", net.Tap, err, err2)
+			}
+
+			continue
 		}
 
 		if err := br.DestroyTap(net.Tap); err != nil {
-			log.Error("leaked tap %v: %v", net.Tap, err)
+			log.Error("leaked android tap %v: %v", net.Tap, err)
 		}
 	}
 
