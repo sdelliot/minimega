@@ -757,27 +757,70 @@ func (vm *AndroidVM) AddNIC(nic NetConfig) error {
 		return err
 	}
 
-	vm.Networks = append(vm.Networks, nic)
-
 	if _, err := vm.addTap(nic.Tap, nic.Bridge, nic.MAC, nic.VLAN, nic.QinQ); err != nil {
 		return vm.setErrorf("unable to add android tap %v: %v", nic.Tap, err)
 	}
 
-	if err := vm.writeTaps(); err != nil {
-		return vm.setErrorf("unable to write android taps: %v", err)
+	cleanupTap := func() {
+		if nic.Bridge != "" && nic.VLAN != DisconnectedVLAN {
+			if br, err := getBridge(nic.Bridge); err == nil {
+				if err := br.DestroyTap(nic.Tap); err != nil {
+					log.Error("unable to clean android tap %v after AddNIC failure: %v", nic.Tap, err)
+				}
+				return
+			}
+		}
+
+		if err := bridge.DestroyTap(nic.Tap); err != nil {
+			log.Error("unable to clean android tap %v after AddNIC failure: %v", nic.Tap, err)
+		}
+	}
+
+	cleanupNetdev := func() {
+		// Best-effort cleanup. NetDevAdd is issued through HMP, so use the same
+		// path to remove it if device_add fails.
+		cmd := fmt.Sprintf(
+			`{"execute":"human-monitor-command","arguments":{"command-line":%q}}`,
+			fmt.Sprintf("netdev_del %s", nic.Tap),
+		)
+
+		if _, err := vm.q.Raw(cmd); err != nil {
+			log.Warn("unable to clean android netdev %v after AddNIC failure: %v", nic.Tap, err)
+		}
 	}
 
 	r, err := vm.q.NetDevAdd("tap", nic.Tap, nic.Tap)
 	if err != nil {
+		cleanupTap()
 		return err
+	}
+	if strings.TrimSpace(r) != "" {
+		cleanupTap()
+		return fmt.Errorf("android qmp netdev_add failed: %s", strings.TrimSpace(r))
 	}
 	log.Debugln("android qmp netdev_add response:", r)
 
-	r, err = vm.q.NicAdd(nic.Tap, nic.Tap, "pci.0", nic.Driver, nic.MAC)
+	// Android Emulator's pci.0 is crowded/reserved by emulator-generated
+	// devices. qemuArgs creates pci.1 for minimega devices, so hot-add Android
+	// NICs there as well.
+	r, err = vm.q.NicAdd(nic.Tap, nic.Tap, "pci.1", nic.Driver, nic.MAC)
 	if err != nil {
+		cleanupNetdev()
+		cleanupTap()
 		return err
 	}
+	if strings.TrimSpace(r) != "" {
+		cleanupNetdev()
+		cleanupTap()
+		return fmt.Errorf("android qmp device_add failed: %s", strings.TrimSpace(r))
+	}
 	log.Debugln("android qmp device_add response:", r)
+
+	vm.Networks = append(vm.Networks, nic)
+
+	if err := vm.writeTaps(); err != nil {
+		return vm.setErrorf("unable to write android taps: %v", err)
+	}
 
 	return nil
 }
