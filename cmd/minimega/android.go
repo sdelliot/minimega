@@ -329,10 +329,13 @@ func (vm *AndroidVM) launch() error {
 		return vm.setErrorf("android adb not found: %v", err)
 	}
 
-	// Android emulator tap/network support is deferred. Avoid creating taps
-	// and then failing later with obscure /dev/net/tun errors.
-	if len(vm.Networks) > 0 || len(vm.Bonds) > 0 {
-		return vm.setErrorf("android VM networking is not supported yet")
+	if err := vm.createTaps(); err != nil {
+		return err
+	}
+
+	// This MUST be done after vm.createTaps.
+	if err := vm.createBonds(); err != nil {
+		return err
 	}
 
 	if vm.State == VM_BUILDING {
@@ -438,7 +441,13 @@ func (vm *AndroidVM) androidQEMUArgs() []string {
 	args := vmConfig.qemuArgs(vm.ID, vm.instancePath)
 	args = vmConfig.applyQemuOverrides(args)
 
-	return filterAndroidQEMUArgs(args)
+	log.Debug("android backend qemu args before filter for vm %v: %#v", vm.ID, args)
+
+	args = filterAndroidQEMUArgs(args)
+
+	log.Debug("android backend qemu args after filter for vm %v: %#v", vm.ID, args)
+
+	return args
 }
 
 // filterAndroidQEMUArgs implements the important parts of the old
@@ -623,4 +632,82 @@ func tcpPortAvailable(port int) bool {
 
 	l.Close()
 	return true
+}
+
+func (vm *AndroidVM) createTapName(bridge string) (string, error) {
+	br, err := getBridge(bridge)
+	if err != nil {
+		return "", vm.setErrorf("unable to get bridge %v: %v", bridge, err)
+	}
+
+	return br.CreateTapName(), nil
+}
+
+func (vm *AndroidVM) addTap(name, bridge, mac string, vlan int, qinq bool) (string, error) {
+	br, err := getBridge(bridge)
+	if err != nil {
+		return name, vm.setErrorf("unable to get bridge %v: %v", bridge, err)
+	}
+
+	tap, err := br.CreateTap(name, mac, vlan)
+	if err != nil {
+		return tap, err
+	}
+
+	if qinq {
+		if err := br.SetTapQinQ(tap, vlan); err != nil {
+			return tap, err
+		}
+	}
+
+	return tap, nil
+}
+
+func (vm *AndroidVM) createTaps() error {
+	for i := range vm.Networks {
+		nic := &vm.Networks[i]
+		if nic.Tap != "" {
+			// Tap has already been created.
+			continue
+		}
+
+		tap, err := vm.addTap("", nic.Bridge, nic.MAC, nic.VLAN, nic.QinQ)
+		if err != nil {
+			return vm.setErrorf("unable to create android tap %v: %v", i, err)
+		}
+
+		nic.Tap = tap
+	}
+
+	if len(vm.Networks) > 0 {
+		if err := vm.writeTaps(); err != nil {
+			return vm.setErrorf("unable to write android taps: %v", err)
+		}
+	}
+
+	return nil
+}
+
+func (vm *AndroidVM) createBonds() error {
+	for i := range vm.Bonds {
+		bond := &vm.Bonds[i]
+
+		if bond.created {
+			continue
+		}
+
+		if err := vm.addBond(bond); err != nil {
+			return vm.setErrorf("unable to create android bond %v: %v", i, err)
+		}
+
+		bond.created = true
+	}
+
+	if len(vm.Bonds) > 0 {
+		if err := vm.writeBonds(); err != nil {
+			return vm.setErrorf("unable to write android bonds: %v", err)
+		}
+	}
+
+	return nil
 }
