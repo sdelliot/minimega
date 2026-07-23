@@ -735,3 +735,49 @@ func (vm *AndroidVM) createBonds() error {
 
 	return nil
 }
+
+func (vm *AndroidVM) AddNIC(nic NetConfig) error {
+	vm.lock.Lock()
+	defer vm.lock.Unlock()
+
+	if nic.MAC == "" {
+		nic.MAC = randomMac()
+	}
+
+	// Android Emulator's backend QEMU does not support minimega's default
+	// e1000 NIC, so normalize unspecified/default KVM drivers to Android's
+	// supported default.
+	if nic.Driver == "" || nic.Driver == DefaultKVMDriver {
+		nic.Driver = DefaultAndroidNetDriver
+	}
+
+	var err error
+	nic.Tap, err = vm.createTapName(nic.Bridge)
+	if err != nil {
+		return err
+	}
+
+	vm.Networks = append(vm.Networks, nic)
+
+	if _, err := vm.addTap(nic.Tap, nic.Bridge, nic.MAC, nic.VLAN, nic.QinQ); err != nil {
+		return vm.setErrorf("unable to add android tap %v: %v", nic.Tap, err)
+	}
+
+	if err := vm.writeTaps(); err != nil {
+		return vm.setErrorf("unable to write android taps: %v", err)
+	}
+
+	r, err := vm.q.NetDevAdd("tap", nic.Tap, nic.Tap)
+	if err != nil {
+		return err
+	}
+	log.Debugln("android qmp netdev_add response:", r)
+
+	r, err = vm.q.NicAdd(nic.Tap, nic.Tap, "pci.0", nic.Driver, nic.MAC)
+	if err != nil {
+		return err
+	}
+	log.Debugln("android qmp device_add response:", r)
+
+	return nil
+}

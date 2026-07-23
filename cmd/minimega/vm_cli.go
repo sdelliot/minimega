@@ -262,7 +262,7 @@ connections via vm config when launching VMs. See "vm config net" for more detai
 You will need to specify the VLAN of which the interface is a member. Optionally, you may
 specify the bridge the interface will be connected on. You may also specify a MAC address for
 the interface. Finally, you may also specify the network device for qemu to use. By default,
-"e1000" is used for KVM and "virtio-net-pci" is used for Android VM's. The order is:
+"e1000" is used for KVM and "virtio-net-pci" is used for Android VMs. The order is:
 
 	<bridge>,<VLAN>,<MAC>,<driver>
 
@@ -981,13 +981,17 @@ func cliVMNetMod(ns *Namespace, c *minicli.Command, resp *minicli.Response) erro
 				return true, err
 			}
 
-			kvm, ok := vm.(*KvmVM)
+			type nicAdder interface {
+				AddNIC(NetConfig) error
+			}
+
+			adder, ok := vm.(nicAdder)
 			if !ok {
-				return true, fmt.Errorf("unable to get Kvm")
+				return true, fmt.Errorf("VM type does not support adding NICs: %v", vm.GetType())
 			}
 
 			for _, n := range nics {
-				err = kvm.AddNIC(n)
+				err = adder.AddNIC(n)
 			}
 
 			if err != nil {
