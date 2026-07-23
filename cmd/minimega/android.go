@@ -22,6 +22,11 @@ import (
 const (
 	DefaultAndroidConsolePort = 5554
 	MaxAndroidConsolePort     = 5682
+
+	DefaultAndroidNetDriver = "virtio-net-pci"
+
+	AndroidQMPConnectRetry = 300
+	AndroidQMPConnectDelay = 100
 )
 
 type AndroidVM struct {
@@ -53,6 +58,12 @@ func NewAndroid(name, namespace string, config VMConfig) (*AndroidVM, error) {
 
 	vm.KVMConfig = config.KVMConfig.Copy()
 	vm.AndroidConfig = config.AndroidConfig.Copy()
+
+	for i := range vm.Networks {
+		if vm.Networks[i].Driver == "" || vm.Networks[i].Driver == DefaultKVMDriver {
+			vm.Networks[i].Driver = DefaultAndroidNetDriver
+		}
+	}
 
 	if vm.AVDName == "" {
 		return nil, errors.New("unable to create android VM without a configured android-avd")
@@ -329,15 +340,6 @@ func (vm *AndroidVM) launch() error {
 		return vm.setErrorf("android adb not found: %v", err)
 	}
 
-	if err := vm.createTaps(); err != nil {
-		return err
-	}
-
-	// This MUST be done after vm.createTaps.
-	if err := vm.createBonds(); err != nil {
-		return err
-	}
-
 	if vm.State == VM_BUILDING {
 		// Android reuses KVMConfig/qemuArgs for backend QEMU arguments, so apply
 		// the same disk snapshot behavior as KVM VMs.
@@ -351,6 +353,15 @@ func (vm *AndroidVM) launch() error {
 				vm.Disks[i].SnapshotPath = dst
 			}
 		}
+	}
+
+	if err := vm.createTaps(); err != nil {
+		return err
+	}
+
+	// This MUST be done after vm.createTaps.
+	if err := vm.createBonds(); err != nil {
+		return err
 	}
 
 	console, adb, err := reserveAndroidPortPair(vm.ConsoleBasePort)
@@ -507,9 +518,9 @@ func (vm *AndroidVM) androidEnv() []string {
 }
 
 func (vm *AndroidVM) connectQMP() (err error) {
-	delay := QMP_CONNECT_DELAY * time.Millisecond
+	delay := AndroidQMPConnectDelay * time.Millisecond
 
-	for count := 0; count < QMP_CONNECT_RETRY; count++ {
+	for count := 0; count < AndroidQMPConnectRetry; count++ {
 		vm.q, err = qmp.Dial(vm.path("qmp"))
 		if err == nil {
 			log.Debug("android qmp dial to %v successful", vm.ID)
