@@ -294,6 +294,12 @@ For Android VMs, vm net connect/disconnect operates on the host-side minimega
 tap attached to the Android Emulator backend NIC. It does not configure Android
 guest IP addresses, policy routing, or firewall rules.
 
+For runtime Android NIC hot-add, the host-side tap and QEMU device are added by
+minimega, but the Android guest may not automatically enumerate the new PCI
+device. A guest-side PCI rescan and interface configuration may be required,
+for example writing 1 to /sys/bus/pci/rescan and then configuring the new
+interface.
+
 To create a bond comprised of two or more interfaces on a VM, use 'vm net bond'.
 For example, to create an 'active-backup' bond with interfaces 1 and 2 on VM foo
 with LACP set to active:
